@@ -24,12 +24,12 @@ int main(int t, float s){
 
     float d[5];
 
-    struct Node this;
+    struct Node ppp;
 
-    this.type = 5;
-    this.value = 7.7;
+    ppp.type = 5;
+    ppp.value = 7.7;
 
-    i = this.type + i;
+    i = ppp.type + i;
 
     a = 0;
     while (a < c[0]){
@@ -40,7 +40,7 @@ int main(int t, float s){
         a = b;
     }
     else if (i > 10){
-        b = this.type;
+        b = ppp.type;
     }
     else {
         a = c[(1+i)];

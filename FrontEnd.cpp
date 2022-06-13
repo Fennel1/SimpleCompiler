@@ -751,15 +751,18 @@ int GetType(string name, string name_)                //获取标识符类型
 {
     for (unsigned int i=0; i<SYNBL.size(); i++){
         if (SYNBL[i].name == name){
+            if (SYNBL[i].type == -1)    return -77;
             if (name_ == "")    return SYNBL[i].type;
             else if(name_ == "[]"){
                 return TYPEL[SYNBL[i].type].tpoint;
             }
             else{
-                for (unsigned int j=0; j<SYNBL.size(); j++){
-                    if (SYNBL[j].name == name_){
-                        return SYNBL[j].type;
+                if (SYNBL[i].cat != "V")    return -2;
+                for (unsigned int j=TYPEL[SYNBL[i].type].tpoint; j<RINFL.size(); j++){
+                    if (RINFL[j].name == name_){
+                        return RINFL[j].type;
                     }
+                    if (j != 0 && RINFL[j].off < RINFL[j-1].off)    break;
                 }
                 return -1;
             }
@@ -773,6 +776,10 @@ bool CheckType(string t1, string t2)    //检查标识符类型
     string t1_, t2_, t1__, t2__;
     int t1_type=-1, t2_type=-1;
     if (t1[0] == 't'){                          //临时变量
+        if (T_type.find(t1) == T_type.end()){
+            cout << "Error: 使用未定义变量 " << endl;
+            return false;
+        }
         t1_ = t1;
         t1_type = T_type[t1_];
     }
@@ -807,11 +814,11 @@ bool CheckType(string t1, string t2)    //检查标识符类型
         t2_type = GetType(t2_, t2__);
     }
     // cout << t1_ << " " << t1_type << " " << t2_ << " " << t2_type << endl;
-    if (t1_type == -1){
+    if (t1_type == -1 || t1_type == -77){
         cout << "Error: 未定义的变量 " << t1_ << endl;
         return false;
     }
-    if (t2_type == -1){
+    if (t2_type == -1 || t2_type == -77){
         cout << "Error: 未定义的变量 " << t2_ << endl;
         return false;
     }
@@ -1570,8 +1577,8 @@ bool InitialValue()                     //赋初值
         return true;
     }
     else{
-        string t1= SEM.top(); SEM.pop();
-        string t2= SEM.top(); SEM.pop();
+        // string t1= SEM.top(); SEM.pop();
+        // string t2= SEM.top(); SEM.pop();
         // cout << t1 << " " << t2 << endl;
         // if (t1[0] == '['){
         //     SEM.pop();
@@ -2375,7 +2382,7 @@ void show_ACT()
     cout << "————————————————————————————————————————————————带活跃信息的四元式————————————————————————————————————————————————" << endl;
     for (unsigned int i = 0; i < QT_ACT.size(); i++) {
         cout.width(10);
-        cout << i;
+        cout << i+1;
         cout.width(10);
         cout << QT_ACT[i].block_id;
         cout.width(10);
@@ -2391,7 +2398,7 @@ void show_ACT()
 
 int main()
 {
-    ifstream inFile("test2.txt");
+    ifstream inFile("test.txt");
     while (getline(inFile, t_str))  str += t_str + '\n';
     str += "#\n";
     cout << str << endl;
