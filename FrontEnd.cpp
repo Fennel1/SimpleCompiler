@@ -2153,6 +2153,86 @@ bool ReturnStatement()                 //return语句
     }
 }
 
+bool BaseBlock()                    //基本块划分
+{
+    int bs=QT.size();              
+    int begin[bs+1]={0};            //数组用作标记开始语句
+    begin[0]=1;
+    int i;
+    int n;
+    int tempid=0;
+
+    for(i=1;i<QT.size();i++){       //查找开始语句
+             if(QT[i].op=="if")     begin[i+1]=1;
+        else if(QT[i].op=="ifend")  begin[i]=1;
+        else if(QT[i].op=="elif")   begin[i+1]=1;
+        else if(QT[i].op=="elifend")begin[i]=1;
+        else if(QT[i].op=="else")   begin[i+1]=1;
+        else if(QT[i].op=="elseend")begin[i]=1;
+        else if(QT[i].op=="while")  begin[i+1]=1;
+        else if(QT[i].op=="whend")  begin[i+1]=1;
+        else if(QT[i].op=="for")    begin[i+1]=1;
+        else if(QT[i].op=="forend") begin[i+1]=1;
+        else if(QT[i].op=="do")     begin[i+1]=1;
+
+    }
+
+    for(i=0;i<QT.size();i++){
+        if(begin[i]==1){
+            tempid++;
+        }
+        QT[i].block_id=tempid;
+    }
+    return true;
+}
+
+bool IsNumber(string s)            //判断是否为数字
+{
+    int i;
+    for(i=0;i<s.length();i++){
+        if(s[i]<'0'||s[i]>'9'){
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ConstEasy()                    //常值表达式节省
+{
+    int i;
+    int temp;
+    for(i=0;i<QT.size();i++){
+        if(QT[i].op=="+"||QT[i].op=="-"||QT[i].op=="/"||QT[i].op=="*"){
+            if(IsNumber(QT[i].num1)&&IsNumber(QT[i].num2)){
+                if(QT[i].op=="+"){
+                    temp=atof(QT[i].num1.c_str())+atof(QT[i].num2.c_str());
+                    QT[i].op="=";
+                    QT[i].num1=to_string(temp);
+                    QT[i].num2="_";
+                }
+                else if(QT[i].op=="-"){
+                    temp=atof(QT[i].num1.c_str())-atof(QT[i].num2.c_str());
+                    QT[i].op="=";
+                    QT[i].num1=to_string(temp);
+                    QT[i].num2="_";
+                }
+                else if(QT[i].op=="*"){
+                    temp=atof(QT[i].num1.c_str())*atof(QT[i].num2.c_str());
+                    QT[i].op="=";
+                    QT[i].num1=to_string(temp);
+                    QT[i].num2="_";
+                }
+                else if(QT[i].op=="/"){
+                    temp=atof(QT[i].num1.c_str())/atof(QT[i].num2.c_str());
+                    QT[i].op="=";
+                    QT[i].num1=to_string(temp);
+                    QT[i].num2="_";
+                }
+            }
+        }
+    }
+    return true;
+}
 
 int main()
 {
