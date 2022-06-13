@@ -75,9 +75,11 @@ struct AINFL_Node{      // 数组表结点
 struct RINFL_Node{      //结构表结点
     string name;    // 名称
     int off;       // 区距
-    RINFL_Node(string name, int off){
+    int type;
+    RINFL_Node(string name, int off, int type){
         this->name = name;
         this->off = off;
+        this->type = type;
     }
 };
 
@@ -162,7 +164,7 @@ void show_SYNBL()
     }
     cout << "结构表：" << endl;
     for(unsigned int i = 0; i < RINFL.size(); i++){
-        cout << i << "\t" << RINFL[i].name << "\t" << RINFL[i].off << endl;
+        cout << i << "\t" << RINFL[i].name << "\t" << RINFL[i].off << "\t" << RINFL[i].type << endl;
     }
     cout << "长度表：" << endl;
     for(unsigned int i = 0; i < LEN.size(); i++){
@@ -447,8 +449,18 @@ struct QT_Node{     //四元式节点
     }
 };
 
+struct SEM_Node{    //语义分析节点
+    string name;
+    string type;
+    SEM_Node(string name, string type){
+        this->name = name;
+        this->type = type;
+    }
+};
+
 vector<QT_Node> QT;         //四元式
 stack<string> SEM;          //语义分析栈
+map<string, int> T_type;    //临时变量类型
 
 int QT_index = 0;
 
@@ -719,6 +731,121 @@ bool Factor()                           //因子
     return true;
 }
 
+pair<string, string> GetName(string name)             //获取标识符名称
+{
+    string name_="";
+    for (unsigned int i=0; i<name.length(); i++){
+        if (name[i] == '['){
+            name = name.substr(0, i);
+            name_ = "[]";
+        }
+        else if (name[i] == '.'){
+            name_ = name.substr(i+1);
+            name = name.substr(0,i);
+        }
+    }
+    return make_pair(name, name_);
+}
+
+int GetType(string name, string name_)                //获取标识符类型
+{
+    for (unsigned int i=0; i<SYNBL.size(); i++){
+        if (SYNBL[i].name == name){
+            if (name_ == "")    return SYNBL[i].type;
+            else if(name_ == "[]"){
+                return TYPEL[SYNBL[i].type].tpoint;
+            }
+            else{
+                for (unsigned int j=0; j<SYNBL.size(); j++){
+                    if (SYNBL[j].name == name_){
+                        return SYNBL[j].type;
+                    }
+                }
+                return -1;
+            }
+        }
+    }
+    return -1;
+}
+
+bool CheckType(string t1, string t2)    //检查标识符类型
+{
+    string t1_, t2_, t1__, t2__;
+    int t1_type=-1, t2_type=-1;
+    if (t1[0] == 't'){                          //临时变量
+        t1_ = t1;
+        t1_type = T_type[t1_];
+    }
+    else if (t1[0] <= '9' && t1[0] >= '0'){     //数字常量
+        t1_ = t1;
+        for (unsigned int i=0; i<t1.length(); i++){
+            if (t1[i] == '.'){
+                t1_type = 1;
+            }
+        }
+        if (t1_type == -1)  t1_type = 0;
+    }
+    else{                                       //标识符
+        tie(t1_, t1__) = GetName(t1);
+        t1_type = GetType(t1_, t1__);
+    }
+    if (t2[0] == 't'){
+        t2_ = t2;
+        t2_type = T_type[t2_];
+    }
+    else if (t2[0] <= '9' && t2[0] >= '0'){
+        t2_ = t2;
+        for (unsigned int i=0; i<t2.length(); i++){
+            if (t2[i] == '.'){
+                t2_type = 1;
+            }
+        }
+        if (t2_type == -1)  t2_type = 0;
+    }
+    else{
+        tie(t2_, t2__) = GetName(t2);
+        t2_type = GetType(t2_, t2__);
+    }
+    // cout << t1_ << " " << t1_type << " " << t2_ << " " << t2_type << endl;
+    if (t1_type == -1){
+        cout << "Error: 未定义的变量 " << t1_ << endl;
+        return false;
+    }
+    if (t2_type == -1){
+        cout << "Error: 未定义的变量 " << t2_ << endl;
+        return false;
+    }
+    if (t1_type != t2_type){
+        cout << "Error: 类型不匹配 " << t1_ << " " << t2_ << endl;
+        return false;
+    }
+    return true;
+}
+
+int GetTType(string name)                //获取临时变量类型
+{
+    string name_, name__;
+    int type=-1;
+    if (name[0] == 't'){                          //临时变量
+        name_ = name;
+        type = T_type[name_];
+    }
+    else if (name[0] <= '9' && name[0] >= '0'){     //数字常量
+        name_ = name;
+        for (unsigned int i=0; i<name.length(); i++){
+            if (name[i] == '.'){
+                type = 1;
+            }
+        }
+        if (type == -1)  type = 0;
+    }
+    else{                                       //标识符
+        tie(name_, name__) = GetName(name);
+        type = GetType(name_, name__);
+    }
+    return type;
+}
+
 bool Term()                             //项
 {
     if (token.type == "P" && token.value == "+"){
@@ -726,8 +853,10 @@ bool Term()                             //项
         if (!Factor()) return false;
         string t1 = SEM.top(); SEM.pop();
         string t2 = SEM.top(); SEM.pop();
+        if (!CheckType(t1, t2)) return false;
         QT_index++;
         QT.push_back(QT_Node("+", t2, t1, "t"+to_string(QT_index)));
+        T_type["t"+to_string(QT_index)] = GetTType(t1);
         SEM.push("t"+to_string(QT_index));
         if (!Term()) return false;
         return true;
@@ -737,8 +866,10 @@ bool Term()                             //项
         if (!Factor()) return false;
         string t1 = SEM.top(); SEM.pop();
         string t2 = SEM.top(); SEM.pop();
+        if (!CheckType(t1, t2)) return false;
         QT_index++;
         QT.push_back(QT_Node("-", t2, t1, "t"+to_string(QT_index)));
+        T_type["t"+to_string(QT_index)] = GetTType(t1);
         SEM.push("t"+to_string(QT_index));
         if (!Term()) return false;
         return true;
@@ -755,8 +886,11 @@ bool MutiFactorRecurr()                 //因式递归
         if (!MutiFactor())  return false;
         string t1 = SEM.top(); SEM.pop();
         string t2 = SEM.top(); SEM.pop();
+        string t1_t="", t2_t="";
+        if (!CheckType(t1, t2)) return false;
         QT_index++;
         QT.push_back(QT_Node("*", t2, t1, "t"+to_string(QT_index)));
+        T_type["t"+to_string(QT_index)] = GetTType(t1);
         SEM.push("t"+to_string(QT_index));
         if (!MutiFactorRecurr())    return false;
         return true;
@@ -766,8 +900,10 @@ bool MutiFactorRecurr()                 //因式递归
         if (!MutiFactor())  return false;
         string t1 = SEM.top(); SEM.pop();
         string t2 = SEM.top(); SEM.pop();
+        if (!CheckType(t1, t2)) return false;
         QT_index++;
         QT.push_back(QT_Node("/", t2, t1, "t"+to_string(QT_index)));
+        T_type["t"+to_string(QT_index)] = GetTType(t1);
         SEM.push("t"+to_string(QT_index));
         if (!MutiFactorRecurr())    return false;
         return true;
@@ -803,10 +939,16 @@ bool Declaration()                      //声明
             // cout << name << " " << type << endl;
             if (name[name.size()-1] != ']'){        // 如果不是数组
                 for (unsigned int i=0; i<SYNBL.size(); i++){
-                    if (SYNBL[i].name == name && SYNBL[i].type == -1){
-                        SYNBL[i].type = INT;
-                        SYNBL[i].cat = "V";
-                        break;
+                    if (SYNBL[i].name == name){
+                        if (SYNBL[i].type == -1){
+                            SYNBL[i].type = INT;
+                            SYNBL[i].cat = "V";
+                            break;
+                        }
+                        else{
+                            cout << "Error: " << name << " 重复定义" << endl;
+                            return false;
+                        }
                     }
                 }
             }
@@ -821,14 +963,20 @@ bool Declaration()                      //声明
                     }
                 }
                 for (unsigned int i=0; i<SYNBL.size(); i++){
-                    if (SYNBL[i].name == name_ && SYNBL[i].type == -1){
-                        SYNBL[i].type = TYPEL.size();
-                        SYNBL[i].cat = "a";
-                        SYNBL[i].addr = LEN.size();
-                        LEN.push_back(lens*TYPEL[INT].tpoint);
-                        TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
-                        AINFL.push_back(AINFL_Node(lens, INT, TYPEL[INT].tpoint));
-                        break;
+                    if (SYNBL[i].name == name_){
+                        if (SYNBL[i].type == -1){
+                            SYNBL[i].type = TYPEL.size();
+                            SYNBL[i].cat = "a";
+                            SYNBL[i].addr = LEN.size();
+                            LEN.push_back(lens*TYPEL[INT].tpoint);
+                            TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
+                            AINFL.push_back(AINFL_Node(lens, INT, TYPEL[INT].tpoint));
+                            break;
+                        }
+                        else{
+                            cout << "Error: " << name_ << " 重复定义" << endl;
+                            return false;
+                        }
                     }
                 }
             }
@@ -846,10 +994,16 @@ bool Declaration()                      //声明
             // cout << name << " " << type << endl;
             if (name[name.size()-1] != ']'){        // 如果不是数组
                 for (unsigned int i=0; i<SYNBL.size(); i++){
-                    if (SYNBL[i].name == name && SYNBL[i].type == -1){
-                        SYNBL[i].type = FLOAT;
-                        SYNBL[i].cat = "V";
-                        break;
+                    if (SYNBL[i].name == name){
+                        if (SYNBL[i].type == -1){
+                            SYNBL[i].type = FLOAT;
+                            SYNBL[i].cat = "V";
+                            break;
+                        }
+                        else{
+                            cout << "Error: " << name << " 重复定义" << endl;
+                            return false;
+                        }
                     }
                 }
             }
@@ -864,14 +1018,20 @@ bool Declaration()                      //声明
                     }
                 }
                 for (unsigned int i=0; i<SYNBL.size(); i++){
-                    if (SYNBL[i].name == name_ && SYNBL[i].type == -1){
-                        SYNBL[i].type = TYPEL.size();
-                        SYNBL[i].cat = "a";
-                        SYNBL[i].addr = LEN.size();
-                        LEN.push_back(lens*TYPEL[FLOAT].tpoint);
-                        TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
-                        AINFL.push_back(AINFL_Node(lens, FLOAT, TYPEL[FLOAT].tpoint));
-                        break;
+                    if (SYNBL[i].name == name_){
+                        if (SYNBL[i].type == -1){
+                            SYNBL[i].type = TYPEL.size();
+                            SYNBL[i].cat = "a";
+                            SYNBL[i].addr = LEN.size();
+                            LEN.push_back(lens*TYPEL[FLOAT].tpoint);
+                            TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
+                            AINFL.push_back(AINFL_Node(lens, FLOAT, TYPEL[FLOAT].tpoint));
+                            break;
+                        }
+                        else{
+                            cout << "Error: " << name_ << " 重复定义" << endl;
+                            return false;
+                        }
                     }
                 }
             }
@@ -889,10 +1049,16 @@ bool Declaration()                      //声明
             // cout << name << " " << type << endl;
             if (name[name.size()-1] != ']'){        // 如果不是数组
                 for (unsigned int i=0; i<SYNBL.size(); i++){
-                    if (SYNBL[i].name == name && SYNBL[i].type == -1){
-                        SYNBL[i].type = DOUBLE;
-                        SYNBL[i].cat = "V";
-                        break;
+                    if (SYNBL[i].name == name){
+                        if (SYNBL[i].type == -1){
+                            SYNBL[i].type = DOUBLE;
+                            SYNBL[i].cat = "V";
+                            break;
+                        }
+                        else{
+                            cout << "Error: " << name << " 重复定义" << endl;
+                            return false;
+                        }
                     }
                 }
             }
@@ -907,14 +1073,20 @@ bool Declaration()                      //声明
                     }
                 }
                 for (unsigned int i=0; i<SYNBL.size(); i++){
-                    if (SYNBL[i].name == name_ && SYNBL[i].type == -1){
-                        SYNBL[i].type = TYPEL.size();
-                        SYNBL[i].cat = "a";
-                        SYNBL[i].addr = LEN.size();
-                        LEN.push_back(lens*TYPEL[DOUBLE].tpoint);
-                        TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
-                        AINFL.push_back(AINFL_Node(lens, DOUBLE, TYPEL[DOUBLE].tpoint));
-                        break;
+                    if (SYNBL[i].name == name_){
+                        if (SYNBL[i].type == -1){
+                            SYNBL[i].type = TYPEL.size();
+                            SYNBL[i].cat = "a";
+                            SYNBL[i].addr = LEN.size();
+                            LEN.push_back(lens*TYPEL[DOUBLE].tpoint);
+                            TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
+                            AINFL.push_back(AINFL_Node(lens, DOUBLE, TYPEL[DOUBLE].tpoint));
+                            break;
+                        }
+                        else{
+                            cout << "Error: " << name_ << " 重复定义" << endl;
+                            return false;
+                        }
                     }
                 }
             }
@@ -932,10 +1104,16 @@ bool Declaration()                      //声明
             // cout << name << " " << type << endl;
             if (name[name.size()-1] != ']'){        // 如果不是数组
                 for (unsigned int i=0; i<SYNBL.size(); i++){
-                    if (SYNBL[i].name == name && SYNBL[i].type == -1){
-                        SYNBL[i].type = CHAR;
-                        SYNBL[i].cat = "V";
-                        break;
+                    if (SYNBL[i].name == name){
+                        if (SYNBL[i].type == -1){
+                            SYNBL[i].type = CHAR;
+                            SYNBL[i].cat = "V";
+                            break;
+                        }
+                        else{
+                            cout << "Error: " << name << " 重复定义" << endl;
+                            return false;
+                        }
                     }
                 }
             }
@@ -950,14 +1128,20 @@ bool Declaration()                      //声明
                     }
                 }
                 for (unsigned int i=0; i<SYNBL.size(); i++){
-                    if (SYNBL[i].name == name_ && SYNBL[i].type == -1){
-                        SYNBL[i].type = TYPEL.size();
-                        SYNBL[i].cat = "a";
-                        SYNBL[i].addr = LEN.size();
-                        LEN.push_back(lens*TYPEL[CHAR].tpoint);
-                        TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
-                        AINFL.push_back(AINFL_Node(lens, CHAR, TYPEL[CHAR].tpoint));
-                        break;
+                    if (SYNBL[i].name == name_){
+                        if (SYNBL[i].type == -1){
+                            SYNBL[i].type = TYPEL.size();
+                            SYNBL[i].cat = "a";
+                            SYNBL[i].addr = LEN.size();
+                            LEN.push_back(lens*TYPEL[CHAR].tpoint);
+                            TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
+                            AINFL.push_back(AINFL_Node(lens, CHAR, TYPEL[CHAR].tpoint));
+                            break;
+                        }
+                        else{
+                            cout << "Error: " << name_ << " 重复定义" << endl;
+                            return false;
+                        }
                     }
                 }
             }
@@ -979,10 +1163,16 @@ bool Declaration()                      //声明
         // cout << name << " " << type << endl;
         if (name[name.size()-1] != ']'){        // 如果不是数组
             for (unsigned int i=0; i<SYNBL.size(); i++){
-                if (SYNBL[i].name == name && SYNBL[i].type == -1){
-                    SYNBL[i].type = INT;
-                    SYNBL[i].cat = "V";
-                    break;
+                if (SYNBL[i].name == name){
+                    if (SYNBL[i].type == -1){
+                        SYNBL[i].type = INT;
+                        SYNBL[i].cat = "V";
+                        break;
+                    }
+                    else{
+                        cout << "Error: " << name << " 重复定义" << endl;
+                        return false;
+                    }
                 }
             }
         }
@@ -997,14 +1187,20 @@ bool Declaration()                      //声明
                 }
             }
             for (unsigned int i=0; i<SYNBL.size(); i++){
-                if (SYNBL[i].name == name_ && SYNBL[i].type == -1){
-                    SYNBL[i].type = TYPEL.size();
-                    SYNBL[i].cat = "a";
-                    SYNBL[i].addr = LEN.size();
-                    LEN.push_back(lens*TYPEL[INT].tpoint);
-                    TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
-                    AINFL.push_back(AINFL_Node(lens, INT, TYPEL[INT].tpoint));
-                    break;
+                if (SYNBL[i].name == name_){
+                    if (SYNBL[i].type == -1){
+                        SYNBL[i].type = TYPEL.size();
+                        SYNBL[i].cat = "a";
+                        SYNBL[i].addr = LEN.size();
+                        LEN.push_back(lens*TYPEL[INT].tpoint);
+                        TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
+                        AINFL.push_back(AINFL_Node(lens, INT, TYPEL[INT].tpoint));
+                        break;
+                    }
+                    else{
+                        cout << "Error: " << name_ << " 重复定义" << endl;
+                        return false;
+                    }
                 }
             }
         }
@@ -1022,10 +1218,16 @@ bool Declaration()                      //声明
         // cout << name << " " << type << endl;
         if (name[name.size()-1] != ']'){        // 如果不是数组
             for (unsigned int i=0; i<SYNBL.size(); i++){
-                if (SYNBL[i].name == name && SYNBL[i].type == -1){
-                    SYNBL[i].type = FLOAT;
-                    SYNBL[i].cat = "V";
-                    break;
+                if (SYNBL[i].name == name){
+                    if (SYNBL[i].type == -1){
+                        SYNBL[i].type = FLOAT;
+                        SYNBL[i].cat = "V";
+                        break;
+                    }
+                    else{
+                        cout << "Error: " << name << " 重复定义" << endl;
+                        return false;
+                    }
                 }
             }
         }
@@ -1040,14 +1242,20 @@ bool Declaration()                      //声明
                 }
             }
             for (unsigned int i=0; i<SYNBL.size(); i++){
-                if (SYNBL[i].name == name_ && SYNBL[i].type == -1){
-                    SYNBL[i].type = TYPEL.size();
-                    SYNBL[i].cat = "a";
-                    SYNBL[i].addr = LEN.size();
-                    LEN.push_back(lens*TYPEL[FLOAT].tpoint);
-                    TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
-                    AINFL.push_back(AINFL_Node(lens, FLOAT, TYPEL[FLOAT].tpoint));
-                    break;
+                if (SYNBL[i].name == name_){
+                    if (SYNBL[i].type == -1){
+                        SYNBL[i].type = TYPEL.size();
+                        SYNBL[i].cat = "a";
+                        SYNBL[i].addr = LEN.size();
+                        LEN.push_back(lens*TYPEL[FLOAT].tpoint);
+                        TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
+                        AINFL.push_back(AINFL_Node(lens, FLOAT, TYPEL[FLOAT].tpoint));
+                        break;
+                    }
+                    else{
+                        cout << "Error: " << name_ << " 重复定义" << endl;
+                        return false;
+                    }
                 }
             }
         }
@@ -1065,10 +1273,16 @@ bool Declaration()                      //声明
         // cout << name << " " << type << endl;
         if (name[name.size()-1] != ']'){        // 如果不是数组
             for (unsigned int i=0; i<SYNBL.size(); i++){
-                if (SYNBL[i].name == name && SYNBL[i].type == -1){
-                    SYNBL[i].type = DOUBLE;
-                    SYNBL[i].cat = "V";
-                    break;
+                if (SYNBL[i].name == name){
+                    if (SYNBL[i].type == -1){
+                        SYNBL[i].type = DOUBLE;
+                        SYNBL[i].cat = "V";
+                        break;
+                    }
+                    else{
+                        cout << "Error: " << name << " 重复定义" << endl;
+                        return false;
+                    }
                 }
             }
         }
@@ -1083,14 +1297,20 @@ bool Declaration()                      //声明
                 }
             }
             for (unsigned int i=0; i<SYNBL.size(); i++){
-                if (SYNBL[i].name == name_ && SYNBL[i].type == -1){
-                    SYNBL[i].type = TYPEL.size();
-                    SYNBL[i].cat = "a";
-                    SYNBL[i].addr = LEN.size();
-                    LEN.push_back(lens*TYPEL[DOUBLE].tpoint);
-                    TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
-                    AINFL.push_back(AINFL_Node(lens, DOUBLE, TYPEL[DOUBLE].tpoint));
-                    break;
+                if (SYNBL[i].name == name_){
+                    if (SYNBL[i].type == -1){
+                        SYNBL[i].type = TYPEL.size();
+                        SYNBL[i].cat = "a";
+                        SYNBL[i].addr = LEN.size();
+                        LEN.push_back(lens*TYPEL[DOUBLE].tpoint);
+                        TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
+                        AINFL.push_back(AINFL_Node(lens, DOUBLE, TYPEL[DOUBLE].tpoint));
+                        break;
+                    }
+                    else{
+                        cout << "Error: " << name_ << " 重复定义" << endl;
+                        return false;
+                    }
                 }
             }
         }
@@ -1108,10 +1328,16 @@ bool Declaration()                      //声明
         // cout << name << " " << type << endl;
         if (name[name.size()-1] != ']'){        // 如果不是数组
             for (unsigned int i=0; i<SYNBL.size(); i++){
-                if (SYNBL[i].name == name && SYNBL[i].type == -1){
-                    SYNBL[i].type = CHAR;
-                    SYNBL[i].cat = "V";
-                    break;
+                if (SYNBL[i].name == name){
+                    if (SYNBL[i].type == -1){
+                        SYNBL[i].type = CHAR;
+                        SYNBL[i].cat = "V";
+                        break;
+                    }
+                    else{
+                        cout << "Error: " << name << " 重复定义" << endl;
+                        return false;
+                    }
                 }
             }
         }
@@ -1126,14 +1352,20 @@ bool Declaration()                      //声明
                 }
             }
             for (unsigned int i=0; i<SYNBL.size(); i++){
-                if (SYNBL[i].name == name_ && SYNBL[i].type == -1){
-                    SYNBL[i].type = TYPEL.size();
-                    SYNBL[i].cat = "a";
-                    SYNBL[i].addr = LEN.size();
-                    LEN.push_back(lens*TYPEL[CHAR].tpoint);
-                    TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
-                    AINFL.push_back(AINFL_Node(lens, CHAR, TYPEL[CHAR].tpoint));
-                    break;
+                if (SYNBL[i].name == name_){
+                    if (SYNBL[i].type == -1){
+                        SYNBL[i].type = TYPEL.size();
+                        SYNBL[i].cat = "a";
+                        SYNBL[i].addr = LEN.size();
+                        LEN.push_back(lens*TYPEL[CHAR].tpoint);
+                        TYPEL.push_back(TYPEL_Node("a", AINFL.size()));
+                        AINFL.push_back(AINFL_Node(lens, CHAR, TYPEL[CHAR].tpoint));
+                        break;
+                    }
+                    else{
+                        cout << "Error: " << name_ << " 重复定义" << endl;
+                        return false;
+                    }
                 }
             }
         }
@@ -1164,10 +1396,16 @@ bool Declaration()                      //声明
                     string struct_type = SEM.top(); SEM.pop();
                     for (unsigned int i=0; i<SYNBL.size(); i++){
                         if (SYNBL[i].name == struct_name){
-                            SYNBL[i].type = TYPEL.size();
-                            SYNBL[i].cat = "t";
-                            TYPEL.push_back(TYPEL_Node("d", RINFL.size()));
-                            break;
+                            if (SYNBL[i].type == -1){
+                                SYNBL[i].type = TYPEL.size();
+                                SYNBL[i].cat = "t";
+                                TYPEL.push_back(TYPEL_Node("d", RINFL.size()));
+                                break;
+                            }
+                            else{
+                                cout << "Error: " << struct_name << " 重复定义" << endl;
+                                return false;
+                            }
                         }
                     }
                     int struct_para_size = 0;
@@ -1191,7 +1429,7 @@ bool Declaration()                      //声明
                             }
                         }
                         struct_para_size += TYPEL[para_type_index].tpoint;
-                        RINFL.push_back(RINFL_Node(para_name, struct_para_size));
+                        RINFL.push_back(RINFL_Node(para_name, struct_para_size, para_type_index));
                     }
                     for (unsigned int i=0; i<SYNBL.size(); i++){
                         if (SYNBL[i].name == struct_name){
@@ -1653,8 +1891,10 @@ bool LogicalExpression()                //逻辑表达式
         if (!Expression())   return false;
         string t1 = SEM.top();  SEM.pop();
         string t2 = SEM.top();  SEM.pop();
+        if (!CheckType(t1, t2)) return false;
         QT_index++;
         QT.push_back(QT_Node("==", t2, t1, "t"+to_string(QT_index)));
+        T_type["t"+to_string(QT_index)] = GetTType(t1);
         SEM.push("t"+to_string(QT_index));
         return true;
     }
@@ -1663,8 +1903,10 @@ bool LogicalExpression()                //逻辑表达式
         if (!Expression())   return false;
         string t1 = SEM.top();  SEM.pop();
         string t2 = SEM.top();  SEM.pop();
+        if (!CheckType(t1, t2)) return false;
         QT_index++;
         QT.push_back(QT_Node("!=", t2, t1, "t"+to_string(QT_index)));
+        T_type["t"+to_string(QT_index)] = GetTType(t1);
         SEM.push("t"+to_string(QT_index));
         return true;
     }
@@ -1673,8 +1915,10 @@ bool LogicalExpression()                //逻辑表达式
         if (!Expression())   return false;
         string t1 = SEM.top();  SEM.pop();
         string t2 = SEM.top();  SEM.pop();
+        if (!CheckType(t1, t2)) return false;
         QT_index++;
         QT.push_back(QT_Node(">", t2, t1, "t"+to_string(QT_index)));
+        T_type["t"+to_string(QT_index)] = GetTType(t1);
         SEM.push("t"+to_string(QT_index));
         return true;
     }
@@ -1683,8 +1927,10 @@ bool LogicalExpression()                //逻辑表达式
         if (!Expression())   return false;
         string t1 = SEM.top();  SEM.pop();
         string t2 = SEM.top();  SEM.pop();
+        if (!CheckType(t1, t2)) return false;
         QT_index++;
         QT.push_back(QT_Node(">=", t2, t1, "t"+to_string(QT_index)));
+        T_type["t"+to_string(QT_index)] = GetTType(t1);
         SEM.push("t"+to_string(QT_index));
         return true;
     }
@@ -1693,8 +1939,10 @@ bool LogicalExpression()                //逻辑表达式
         if (!Expression())   return false;
         string t1 = SEM.top();  SEM.pop();
         string t2 = SEM.top();  SEM.pop();
+        if (!CheckType(t1, t2)) return false;
         QT_index++;
         QT.push_back(QT_Node("<", t2, t1, "t"+to_string(QT_index)));
+        T_type["t"+to_string(QT_index)] = GetTType(t1);
         SEM.push("t"+to_string(QT_index));
         return true;
     }
@@ -1703,8 +1951,10 @@ bool LogicalExpression()                //逻辑表达式
         if (!Expression())   return false;
         string t1 = SEM.top();  SEM.pop();
         string t2 = SEM.top();  SEM.pop();
+        if (!CheckType(t1, t2)) return false;
         QT_index++;
         QT.push_back(QT_Node("<=", t2, t1, "t"+to_string(QT_index)));
+        T_type["t"+to_string(QT_index)] = GetTType(t1);
         SEM.push("t"+to_string(QT_index));
         return true;
     }

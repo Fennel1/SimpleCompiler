@@ -29,19 +29,21 @@ int main(int t, float s){
     this.type = 5;
     this.value = 7.7;
 
+    i = this.type + i;
+
     a = 0;
     while (a < c[0]){
-        a = a+1;
+        a = a+c[1];
     }
 
     if (a > 10){
         a = b;
     }
-    else if (b > 10){
+    else if (i > 10){
         b = this.type;
     }
     else {
-        a = c[(1+b)];
+        a = c[(1+i)];
         b = 10;
     }
 
