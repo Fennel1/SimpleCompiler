@@ -550,7 +550,7 @@ bool FunctionDefinition()               //函数定义
     if (token.type == "K" && (token.value == "int" || token.value == "float" || token.value == "double" || token.value == "char")){
         token = nextw();
         string t1 = token.value;
-        QT.push_back(QT_Node("funcbegin", t1, "_", "_"));
+        QT.push_back(QT_Node("funcbegin", "_", "_", t1));
         int func_type;
         for (unsigned int i = 0; i < TYPEL.size(); i++){
             if (TYPEL[i].type == t1){
@@ -1570,8 +1570,8 @@ bool InitialValue()                     //赋初值
         return true;
     }
     else{
-        // string t1= SEM.top(); SEM.pop();
-        // string t2= SEM.top(); SEM.pop();
+        string t1= SEM.top(); SEM.pop();
+        string t2= SEM.top(); SEM.pop();
         // cout << t1 << " " << t2 << endl;
         // if (t1[0] == '['){
         //     SEM.pop();
@@ -2226,6 +2226,169 @@ bool ConstEasy()                    //常值表达式节省
     return true;
 }
 
+struct QT_Token{
+    string name;
+    string type;
+    int active;
+    QT_Token(){
+        name = "";
+        type = "";
+        active = false;
+    }
+    QT_Token(string n, string t, int a){
+        name = n;
+        type = t;
+        active = a;
+    }
+    QT_Token(const QT_Token& qt){
+        name = qt.name;
+        type = qt.type;
+        active = qt.active;
+    }
+};
+
+struct QT_ACT_Node{
+    int block_id;
+    string op;
+    QT_Token num1;
+    QT_Token num2;
+    QT_Token res;
+    QT_ACT_Node(int b, string o, QT_Token n1, QT_Token n2, QT_Token r){
+        block_id = b;
+        op = o;
+        num1 = n1;
+        num2 = n2;
+        res = r;
+    }
+};
+
+struct ACT_SYNBL_Node
+{
+    string name;
+    int active;
+    ACT_SYNBL_Node(string a, int b){
+        name = a;
+        active = b;
+    }
+};
+
+vector<QT_ACT_Node> QT_ACT;
+vector<ACT_SYNBL_Node> ACT_SYNBL;
+
+string GetQTType(string s)
+{
+    if (s[0] == '_')    return "_";
+    else if (s[0] == 't')    return "temp";
+    else if (s[0] >= '0' && s[0] <= '9')    return "constant";
+    else    return "variable";
+}
+
+void GetACT()
+{
+    int last_block_p = 0;
+    for (unsigned int i = 0; i < QT_ACT.size(); i++) {
+        if (i == 0 || QT_ACT[i].block_id != QT_ACT[i-1].block_id){
+            if (i == 0) continue;
+            else{
+                for (int j = i-1; j >= last_block_p; j--) {
+                    for (unsigned int k = 0; k < ACT_SYNBL.size(); k++) {
+                        if (QT_ACT[j].num1.name == ACT_SYNBL[k].name) {
+                            QT_ACT[j].num1.active = ACT_SYNBL[k].active;
+                            ACT_SYNBL[k].active = true;
+                        }
+                        if (QT_ACT[j].num2.name == ACT_SYNBL[k].name) {
+                            QT_ACT[j].num2.active = ACT_SYNBL[k].active;
+                            ACT_SYNBL[k].active = true;
+                        }
+                        if (QT_ACT[j].res.name == ACT_SYNBL[k].name) {
+                            QT_ACT[j].res.active = ACT_SYNBL[k].active;
+                            ACT_SYNBL[k].active = false;
+                        }
+                    }
+                }
+                last_block_p = i;
+                ACT_SYNBL.clear();
+            }
+        }
+        bool flag = false;
+        if (QT_ACT[i].num1.type == "temp") {
+            for (unsigned int j = 0; j < ACT_SYNBL.size(); j++) {
+                if (ACT_SYNBL[j].name == QT_ACT[i].num1.name) {
+                    flag = true;
+                    break;
+                }
+            }
+            if (flag == false) ACT_SYNBL.push_back(ACT_SYNBL_Node(QT_ACT[i].num1.name, false));
+        }
+        else if (QT_ACT[i].num1.type == "variable") {
+            for (unsigned int j = 0; j < ACT_SYNBL.size(); j++) {
+                if (ACT_SYNBL[j].name == QT_ACT[i].num1.name) {
+                    flag = true;
+                    break;
+                }
+            }
+            if (flag == false) ACT_SYNBL.push_back(ACT_SYNBL_Node(QT_ACT[i].num1.name, true));
+        }
+        flag = false;
+        if (QT_ACT[i].num2.type == "temp") {
+            for (unsigned int j = 0; j < ACT_SYNBL.size(); j++) {
+                if (ACT_SYNBL[j].name == QT_ACT[i].num2.name) {
+                    flag = true;
+                    break;
+                }
+            }
+            if (flag == false) ACT_SYNBL.push_back(ACT_SYNBL_Node(QT_ACT[i].num2.name, false));
+        }
+        else if (QT_ACT[i].num2.type == "variable") {
+            for (unsigned int j = 0; j < ACT_SYNBL.size(); j++) {
+                if (ACT_SYNBL[j].name == QT_ACT[i].num2.name) {
+                    flag = true;
+                    break;
+                }
+            }
+            if (flag == false) ACT_SYNBL.push_back(ACT_SYNBL_Node(QT_ACT[i].num2.name, true));
+        }
+        flag = false;
+        if (QT_ACT[i].res.type == "temp") {
+            for (unsigned int j = 0; j < ACT_SYNBL.size(); j++) {
+                if (ACT_SYNBL[j].name == QT_ACT[i].res.name) {
+                    flag = true;
+                    break;
+                }
+            }
+            if (flag == false) ACT_SYNBL.push_back(ACT_SYNBL_Node(QT_ACT[i].res.name, false));
+        }
+        else if (QT_ACT[i].res.type == "variable") {
+            for (unsigned int j = 0; j < ACT_SYNBL.size(); j++) {
+                if (ACT_SYNBL[j].name == QT_ACT[i].res.name) {
+                    flag = true;
+                    break;
+                }
+            }
+            if (flag == false) ACT_SYNBL.push_back(ACT_SYNBL_Node(QT_ACT[i].res.name, true));
+        }
+    }
+}
+
+void show_ACT()
+{
+    cout << "————————————————————————————————————————————————带活跃信息的四元式————————————————————————————————————————————————" << endl;
+    for (unsigned int i = 0; i < QT_ACT.size(); i++) {
+        cout.width(10);
+        cout << i;
+        cout.width(10);
+        cout << QT_ACT[i].block_id;
+        cout.width(10);
+        cout << QT_ACT[i].op;
+        cout.width(15);
+        cout << QT_ACT[i].num1.name + "(" + to_string(QT_ACT[i].num1.active) + ")";
+        cout.width(15);
+        cout << QT_ACT[i].num2.name + "(" + to_string(QT_ACT[i].num2.active) + ")";
+        cout.width(15);
+        cout << QT_ACT[i].res.name + "(" + to_string(QT_ACT[i].res.active) + ")" << endl;
+    }
+}
+
 int main()
 {
     ifstream inFile("test2.txt");
@@ -2238,7 +2401,9 @@ int main()
     token = nextw();
     // bool flag = FunctionDefinition();
     bool flag = Program();
-    if (flag) cout << "语法分析成功" << endl;
+    if (flag){
+        cout << "语法分析成功" << endl;
+    }
     else{
         cout << token.type << " " << token.value << endl;
         cout << "语法分析失败" << endl;
@@ -2253,8 +2418,18 @@ int main()
     }
 
     BaseBlock();        //基本块划分
-    ConstEasy();        //常值表达式节省
-    show_QT();          //显示四元式
+    // ConstEasy();        //常值表达式节省
+    // show_QT();          //显示四元式
+
+    for (unsigned int i=0; i<QT.size(); i++){           //四元式添加活跃信息
+        QT_ACT.push_back(QT_ACT_Node(QT[i].block_id, QT[i].op,
+        QT_Token(QT[i].num1, GetQTType(QT[i].num1), -1),
+        QT_Token(QT[i].num2, GetQTType(QT[i].num2), -1),
+        QT_Token(QT[i].res,  GetQTType(QT[i].res), -1)));
+    }
+
+    GetACT();       //获取活跃信息
+    show_ACT();     //显示带活跃信息的四元式
 
 
     return 0;

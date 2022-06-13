@@ -1,8 +1,9 @@
 int main(){
     int a;
-    float b;
+    int b;
     int i;
 
+    i = (a+b)/(a+b) + a;
     a = 0;
     while (a < 100+1*2){
         a = a+1;
@@ -12,7 +13,7 @@ int main(){
         a = b;
     }
 
-    for (i=7; i<1000; i=i+1){
+    for (i=7; i<1000; i++){
         a = a+2;
     }
 }
