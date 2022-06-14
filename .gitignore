@@ -2,3 +2,6 @@
 bin
 SimpleCompiler.pro.user
 build-SimpleCompiler-Desktop_Qt_5_13_0_MinGW_64_bit-Debug
+cifa.cpp
+asm.cpp
+optimizequa.h

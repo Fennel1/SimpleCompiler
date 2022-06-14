@@ -2396,9 +2396,128 @@ void show_ACT()
     }
 }
 
+struct OBJ_Node{
+    int id;
+    string op;
+    string num1;
+    string num2;
+    OBJ_Node(int id, string op, string num1, string num2){
+        this->id = id;
+        this->op = op;
+        this->num1 = num1;
+        this->num2 = num2;
+    }
+};
+
+struct RDL_Node{
+    bool active;
+    string name;
+    RDL_Node(string name, bool active){
+        this->name = name;
+        this->active = active;
+    }
+    RDL_Node(){
+        this->name = "";
+        this->active = false;
+    }
+    void clear(){
+        active = false;
+        name = "";
+    }
+};
+
+vector<OBJ_Node> OBJ;
+RDL_Node RDL;
+stack<int> OBJ_SEM;
+int OBJ_id = 0;
+
+
+void show_OBJ()
+{
+    cout << "————————————————————————————————————————————————目标代码————————————————————————————————————————————————" << endl;
+    for (unsigned int i=0; i<OBJ.size(); i++) {
+        cout.width(10);
+        cout << OBJ[i].id;
+        cout.width(10);
+        cout << OBJ[i].op;
+        cout.width(15);
+        cout << OBJ[i].num1;
+        cout.width(15);
+        cout << OBJ[i].num2 << endl;
+    }
+}
+
+void GetOBJ()
+{
+    for (unsigned int i=0; i<QT_ACT.size(); i++){
+        if (i == 0 || QT_ACT[i].block_id != QT_ACT[i-1].block_id){
+            if (i == 0) continue;
+            else{
+                RDL.clear();
+            }
+        }
+        if (QT_ACT[i].op == "-" || QT_ACT[i].op == "/" || QT_ACT[i].op == ">" || QT_ACT[i].op == "<" ||
+            QT_ACT[i].op == ">=" || QT_ACT[i].op == "<="){
+            if (RDL.name == ""){
+                OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "ax", QT_ACT[i].num1.name));
+            }
+            else{
+                if (RDL.name != QT_ACT[i].num1.name){
+                    if (RDL.active){
+                        OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                        OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "ax", QT_ACT[i].num1.name));
+                    }
+                    else{
+                        OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "ax", QT_ACT[i].num1.name));
+                    }
+                }
+            }
+
+            if (QT_ACT[i].op == "-")    OBJ.push_back(OBJ_Node(++OBJ_id, "sub", "ax", QT_ACT[i].num2.name));
+            else if (QT_ACT[i].op == "/") OBJ.push_back(OBJ_Node(++OBJ_id, "div", "ax", QT_ACT[i].num2.name));
+            else if (QT_ACT[i].op == ">") OBJ.push_back(OBJ_Node(++OBJ_id, "GT", "ax", QT_ACT[i].num2.name));
+            else if (QT_ACT[i].op == "<") OBJ.push_back(OBJ_Node(++OBJ_id, "LT", "ax", QT_ACT[i].num2.name));
+            else if (QT_ACT[i].op == ">=") OBJ.push_back(OBJ_Node(++OBJ_id, "GE", "ax", QT_ACT[i].num2.name));
+            else if (QT_ACT[i].op == "<=") OBJ.push_back(OBJ_Node(++OBJ_id, "LE", "ax", QT_ACT[i].num2.name));
+
+            RDL.name = QT_ACT[i].res.name;
+            RDL.active = QT_ACT[i].res.active;
+        }
+        else if (QT_ACT[i].op == "+" || QT_ACT[i].op == "*"){
+            if (RDL.name == ""){
+                OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "ax", QT_ACT[i].num1.name));
+                if (QT_ACT[i].op == "+")    OBJ.push_back(OBJ_Node(++OBJ_id, "add", "ax", QT_ACT[i].num2.name));
+                else if (QT_ACT[i].op == "*") OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "ax", QT_ACT[i].num2.name));
+            }
+            else if (RDL.name == QT_ACT[i].num1.name || RDL.name == QT_ACT[i].num2.name){
+                if (RDL.name == QT_ACT[i].num1.name && QT_ACT[i].num1.active){
+                    OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                    if (QT_ACT[i].op == "+")    OBJ.push_back(OBJ_Node(++OBJ_id, "add", "ax", QT_ACT[i].num2.name));
+                    else if (QT_ACT[i].op == "*") OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "ax", QT_ACT[i].num2.name));
+                }
+                else if (RDL.name == QT_ACT[i].num2.name && QT_ACT[i].num2.active){
+                    OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                    if (QT_ACT[i].op == "+")    OBJ.push_back(OBJ_Node(++OBJ_id, "add", "ax", QT_ACT[i].num1.name));
+                    else if (QT_ACT[i].op == "*") OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "ax", QT_ACT[i].num1.name));
+                }
+            }
+            else{
+                if (RDL.active)     OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "ax", QT_ACT[i].num1.name));
+                if (QT_ACT[i].op == "+")    OBJ.push_back(OBJ_Node(++OBJ_id, "add", "ax", QT_ACT[i].num2.name));
+                else if (QT_ACT[i].op == "*") OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "ax", QT_ACT[i].num2.name));
+            }
+
+            RDL.name = QT_ACT[i].res.name;
+            RDL.active = QT_ACT[i].res.active;
+        }
+    }
+}
+
+
 int main()
 {
-    ifstream inFile("test.txt");
+    ifstream inFile("test2.txt");
     while (getline(inFile, t_str))  str += t_str + '\n';
     str += "#\n";
     cout << str << endl;
@@ -2438,6 +2557,8 @@ int main()
     GetACT();       //获取活跃信息
     show_ACT();     //显示带活跃信息的四元式
 
+    GetOBJ();       //获取目标代码
+    show_OBJ();     //显示目标代码
 
     return 0;
 }

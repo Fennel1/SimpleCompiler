@@ -4,16 +4,4 @@ int main(){
     int i;
 
     i = (a+b)/(a+b) + a;
-    a = 0;
-    while (a < 100+1*2){
-        a = a+1;
-    }
-
-    if (a > 10){
-        a = b;
-    }
-
-    for (i=7; i<1000; i++){
-        a = a+2;
-    }
 }

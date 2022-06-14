@@ -321,7 +321,7 @@ void to_objcode(vector< vector<Quaternion> >qua, vector< vector<ACT_INF> >Act_in
 
 	for (int i = 0; i < (int)qua.size(); i++)
 	{
-		int wh_id = 0;
+		int wh_id = 0;	
 		ACT_SYNBL Rdl("", ""); //初始化R寄存器描述表
 		for (int j = 0; j < (int)qua[i].size(); j++)
 		{
