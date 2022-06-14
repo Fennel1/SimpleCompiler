@@ -2396,6 +2396,26 @@ void show_ACT()
     }
 }
 
+struct OBJStruct_Node{
+    string name;
+    vector<pair<string, int>> param;
+    OBJStruct_Node(string name, vector<pair<string, int>> param){
+        this->name = name;
+        this->param = param;
+    }
+};
+
+struct OBJDate_Node{
+    string name;
+    string type;
+    string content;
+    OBJDate_Node(string name, string type, string content){
+        this->name = name;
+        this->type = type;
+        this->content = content;
+    }
+};
+
 struct OBJ_Node{
     int id;
     string op;
@@ -2426,6 +2446,8 @@ struct RDL_Node{
     }
 };
 
+vector<OBJStruct_Node> OBJ_STRUCT;
+vector<OBJDate_Node> OBJ_DATE;
 vector<OBJ_Node> OBJ;
 RDL_Node RDL;
 stack<int> OBJ_SEM;
@@ -2435,6 +2457,30 @@ int OBJ_id = 0;
 void show_OBJ()
 {
     cout << "————————————————————————————————————————————————目标代码————————————————————————————————————————————————" << endl;
+    cout << "结构体：" << endl;
+    for (unsigned int i = 0; i < OBJ_STRUCT.size(); i++) {
+        cout <<  OBJ_STRUCT[i].name  << " STRUC" << endl;
+        for (unsigned int j = 0; j < OBJ_STRUCT[i].param.size(); j++) {
+            if (OBJ_STRUCT[i].param[j].second == 0) cout << OBJ_STRUCT[i].param[j].first << " int " << "DW 0" << endl;
+            else if (OBJ_STRUCT[i].param[j].second == 1) cout << OBJ_STRUCT[i].param[j].first << " float " << "DW 0" << endl;
+            else if (OBJ_STRUCT[i].param[j].second == 2) cout << OBJ_STRUCT[i].param[j].first << " double " << "DW 0" << endl;
+            else if (OBJ_STRUCT[i].param[j].second == 3) cout << OBJ_STRUCT[i].param[j].first << " char " << "DW \' \'" << endl;
+        }
+        cout <<  OBJ_STRUCT[i].name  << " ENDS" << endl;
+    }
+    cout << "数据段：" << endl;
+    for (unsigned int i = 0; i < OBJ_DATE.size(); i++) {
+        cout.width(10);
+        cout << i+1;
+        cout.width(10);
+        cout << OBJ_DATE[i].name;
+        cout.width(20);
+        cout << OBJ_DATE[i].type;
+        cout.width(20);
+        cout << OBJ_DATE[i].content;
+        cout << endl;
+    }
+    cout << "代码段：" << endl;
     for (unsigned int i=0; i<OBJ.size(); i++) {
         cout.width(10);
         cout << OBJ[i].id;
@@ -2449,6 +2495,35 @@ void show_OBJ()
 
 void GetOBJ()
 {
+    for (unsigned int i=0; i<SYNBL.size(); i++){
+        if (SYNBL[i].cat == "V" && (SYNBL[i].type >=0 && SYNBL[i].type <=3)) {
+            if (SYNBL[i].type == 0)         OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "int", "DW 0"));
+            else if (SYNBL[i].type == 1)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "float", "DW 0"));
+            else if (SYNBL[i].type == 2)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "double", "DW 0"));
+            else if (SYNBL[i].type == 3)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "char", "DB \' \'"));
+        }
+        else if (SYNBL[i].cat == "a"){
+            if (AINFL[TYPEL[SYNBL[i].type].tpoint].type == 0)         OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "Arrayint", "DW " +to_string(AINFL[TYPEL[SYNBL[i].type].tpoint].len)+ " DUP (0)"));
+            else if (AINFL[TYPEL[SYNBL[i].type].tpoint].type == 1)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "Arrayfloat", "DW " +to_string(AINFL[TYPEL[SYNBL[i].type].tpoint].len)+ " DUP (0)"));
+            else if (AINFL[TYPEL[SYNBL[i].type].tpoint].type == 2)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "Arraydouble", "DW " +to_string(AINFL[TYPEL[SYNBL[i].type].tpoint].len)+ " DUP (0)"));
+            else if (AINFL[TYPEL[SYNBL[i].type].tpoint].type == 3)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "Arraychar", "DB " +to_string(AINFL[TYPEL[SYNBL[i].type].tpoint].len)+ " DUP (\' \')"));
+        }
+        else if (SYNBL[i].cat == "t"){
+            OBJ_STRUCT.push_back(OBJStruct_Node(SYNBL[i].name, vector<pair<string, int>>()));
+            for (unsigned int j=TYPEL[SYNBL[i].type].tpoint; j<RINFL.size(); j++){
+                OBJ_STRUCT[OBJ_STRUCT.size()-1].param.push_back(make_pair(RINFL[j].name, RINFL[j].type));
+                if (j !=0 && RINFL[j].off < RINFL[j-1].off) break;
+            }
+        }
+        else if (SYNBL[i].cat == "V" && TYPEL[SYNBL[i].type].type == "d"){
+            for (unsigned int j=0; j<OBJ_STRUCT.size(); j++){
+                if (OBJ_STRUCT[j].name == SYNBL[SYNBL[i].addr].name){
+                    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "Struct", "<>"));
+                }
+            }
+        }
+    }
+
     for (unsigned int i=0; i<QT_ACT.size(); i++){
         if (i == 0 || QT_ACT[i].block_id != QT_ACT[i-1].block_id){
             if (i == 0) continue;
@@ -2517,7 +2592,7 @@ void GetOBJ()
 
 int main()
 {
-    ifstream inFile("test2.txt");
+    ifstream inFile("test.txt");
     while (getline(inFile, t_str))  str += t_str + '\n';
     str += "#\n";
     cout << str << endl;
