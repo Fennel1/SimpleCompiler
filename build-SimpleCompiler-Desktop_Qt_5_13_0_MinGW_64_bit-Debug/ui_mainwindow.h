@@ -53,6 +53,7 @@ public:
     QTextBrowser *textBrowser_11;
     QTextBrowser *textBrowser_12;
     QLineEdit *lineEdit;
+    QTextBrowser *textBrowser_13;
     QStatusBar *statusBar;
 
     void setupUi(QMainWindow *MainWindow)
@@ -167,6 +168,9 @@ public:
         lineEdit = new QLineEdit(centralWidget);
         lineEdit->setObjectName(QString::fromUtf8("lineEdit"));
         lineEdit->setGeometry(QRect(0, 0, 301, 91));
+        textBrowser_13 = new QTextBrowser(centralWidget);
+        textBrowser_13->setObjectName(QString::fromUtf8("textBrowser_13"));
+        textBrowser_13->setGeometry(QRect(1800, 1140, 361, 192));
         MainWindow->setCentralWidget(centralWidget);
         textBrowser_10->raise();
         textBrowser_9->raise();
@@ -196,6 +200,7 @@ public:
         textBrowser_11->raise();
         textBrowser_12->raise();
         lineEdit->raise();
+        textBrowser_13->raise();
         statusBar = new QStatusBar(MainWindow);
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
         MainWindow->setStatusBar(statusBar);

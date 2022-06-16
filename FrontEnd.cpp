@@ -197,6 +197,7 @@ map<string, int> P = {{"+", 1},{"-",2},{"*",3},{"/",4},{"=",5},{"(",6},{")",7},{
 
 string str="", t_str="";
 unsigned int str_i=0;
+string ErrorMessage="";
 
 void state_change(int &state, char ch){
     if(state == 1){
@@ -559,7 +560,8 @@ bool FunctionDefinition()               //函数定义
             }
         }
         if (!Variable())    return false;
-        string func_name= SEM.top(); SEM.pop();
+        string func_name = SEM.top(); SEM.pop();
+        func_name = func_name.substr(0, func_name.length()-2);
         if (token.type == "P" && token.value == "("){
             token = nextw();
             int stack_size = SEM.size();
@@ -675,6 +677,11 @@ bool VariableSuffix()                   //变量后缀
         SEM.push("."+t1);
         return true;
     }
+    else if (token.type == "P" && token.value == "("){  //函数调用
+        string t1= SEM.top(); SEM.pop();
+        SEM.push(t1+"()");
+        return true;
+    }
     else{
         return true;
     }
@@ -773,11 +780,12 @@ int GetType(string name, string name_)                //获取标识符类型
 
 bool CheckType(string t1, string t2)    //检查标识符类型
 {
-    string t1_, t2_, t1__, t2__;
+    string t1_="", t2_="", t1__="", t2__="";
     int t1_type=-1, t2_type=-1;
     if (t1[0] == 't'){                          //临时变量
         if (T_type.find(t1) == T_type.end()){
-            cout << "Error: 使用未定义变量 " << endl;
+            ErrorMessage = "Error: 使用未定义变量 " + t1;
+            cout << "Error: 使用未定义变量 " << t1 << endl;
             return false;
         }
         t1_ = t1;
@@ -815,14 +823,25 @@ bool CheckType(string t1, string t2)    //检查标识符类型
     }
     // cout << t1_ << " " << t1_type << " " << t2_ << " " << t2_type << endl;
     if (t1_type == -1 || t1_type == -77){
+        if (t1__ != "" && t1__ != "[]") t1_ = t1_ + "." + t1__;
+        else if (t1__ != "")    t1_ = t1__+"[]";
+        ErrorMessage = "Error: 使用未定义变量 " + t1_;
         cout << "Error: 未定义的变量 " << t1_ << endl;
         return false;
     }
     if (t2_type == -1 || t2_type == -77){
+        if (t2__ != "" && t2__ != "[]") t2_ = t2_ + "." + t2__;
+        else if (t2__ != "")    t2_ = t2__+"[]";
+        ErrorMessage = "Error: 使用未定义变量 " + t2_;
         cout << "Error: 未定义的变量 " << t2_ << endl;
         return false;
     }
     if (t1_type != t2_type){
+        if (t1__ != "" && t1__ != "[]") t1_ = t1_ + "." + t1__;
+        else if (t1__ != "")    t1_ = t1_+"[]";
+        if (t2__ != "" && t2__ != "[]") t2_ = t2_ + "." + t2__;
+        else if (t2__ != "")    t2_ = t2__+"[]";
+        ErrorMessage = "Error: 两个标识符类型不匹配 " + t1_ + " " + t2_;
         cout << "Error: 类型不匹配 " << t1_ << " " << t2_ << endl;
         return false;
     }
@@ -953,6 +972,7 @@ bool Declaration()                      //声明
                             break;
                         }
                         else{
+                            ErrorMessage = "Error: 变量重复定义 " + name;
                             cout << "Error: " << name << " 重复定义" << endl;
                             return false;
                         }
@@ -981,6 +1001,7 @@ bool Declaration()                      //声明
                             break;
                         }
                         else{
+                            ErrorMessage = "Error: 变量重复定义 " + name_;
                             cout << "Error: " << name_ << " 重复定义" << endl;
                             return false;
                         }
@@ -1008,6 +1029,7 @@ bool Declaration()                      //声明
                             break;
                         }
                         else{
+                            ErrorMessage = "Error: 变量重复定义 " + name;
                             cout << "Error: " << name << " 重复定义" << endl;
                             return false;
                         }
@@ -1036,6 +1058,7 @@ bool Declaration()                      //声明
                             break;
                         }
                         else{
+                            ErrorMessage = "Error: 变量重复定义 " + name_;
                             cout << "Error: " << name_ << " 重复定义" << endl;
                             return false;
                         }
@@ -1063,6 +1086,7 @@ bool Declaration()                      //声明
                             break;
                         }
                         else{
+                            ErrorMessage = "Error: 变量重复定义 " + name;
                             cout << "Error: " << name << " 重复定义" << endl;
                             return false;
                         }
@@ -1091,6 +1115,7 @@ bool Declaration()                      //声明
                             break;
                         }
                         else{
+                            ErrorMessage = "Error: 变量重复定义 " + name_;
                             cout << "Error: " << name_ << " 重复定义" << endl;
                             return false;
                         }
@@ -1118,6 +1143,7 @@ bool Declaration()                      //声明
                             break;
                         }
                         else{
+                            ErrorMessage = "Error: 变量重复定义 " + name;
                             cout << "Error: " << name << " 重复定义" << endl;
                             return false;
                         }
@@ -1146,6 +1172,7 @@ bool Declaration()                      //声明
                             break;
                         }
                         else{
+                            ErrorMessage = "Error: 变量重复定义 " + name_;
                             cout << "Error: " << name_ << " 重复定义" << endl;
                             return false;
                         }
@@ -1177,6 +1204,7 @@ bool Declaration()                      //声明
                         break;
                     }
                     else{
+                        ErrorMessage = "Error: 变量重复定义 " + name;
                         cout << "Error: " << name << " 重复定义" << endl;
                         return false;
                     }
@@ -1205,6 +1233,7 @@ bool Declaration()                      //声明
                         break;
                     }
                     else{
+                        ErrorMessage = "Error: 变量重复定义 " + name_;
                         cout << "Error: " << name_ << " 重复定义" << endl;
                         return false;
                     }
@@ -1232,6 +1261,7 @@ bool Declaration()                      //声明
                         break;
                     }
                     else{
+                        ErrorMessage = "Error: 变量重复定义 " + name;
                         cout << "Error: " << name << " 重复定义" << endl;
                         return false;
                     }
@@ -1260,6 +1290,7 @@ bool Declaration()                      //声明
                         break;
                     }
                     else{
+                        ErrorMessage = "Error: 变量重复定义 " + name_;
                         cout << "Error: " << name_ << " 重复定义" << endl;
                         return false;
                     }
@@ -1287,6 +1318,7 @@ bool Declaration()                      //声明
                         break;
                     }
                     else{
+                        ErrorMessage = "Error: 变量重复定义 " + name;
                         cout << "Error: " << name << " 重复定义" << endl;
                         return false;
                     }
@@ -1315,6 +1347,7 @@ bool Declaration()                      //声明
                         break;
                     }
                     else{
+                        ErrorMessage = "Error: 变量重复定义 " + name_;
                         cout << "Error: " << name_ << " 重复定义" << endl;
                         return false;
                     }
@@ -1342,6 +1375,7 @@ bool Declaration()                      //声明
                         break;
                     }
                     else{
+                        ErrorMessage = "Error: 变量重复定义 " + name;
                         cout << "Error: " << name << " 重复定义" << endl;
                         return false;
                     }
@@ -1370,6 +1404,7 @@ bool Declaration()                      //声明
                         break;
                     }
                     else{
+                        ErrorMessage = "Error: 变量重复定义 " + name_;
                         cout << "Error: " << name_ << " 重复定义" << endl;
                         return false;
                     }
@@ -1410,6 +1445,7 @@ bool Declaration()                      //声明
                                 break;
                             }
                             else{
+                                ErrorMessage = "Error: 变量重复定义 " + struct_name;
                                 cout << "Error: " << struct_name << " 重复定义" << endl;
                                 return false;
                             }
@@ -1556,11 +1592,11 @@ bool InitialValue()                     //赋初值
                     string temp = SEM.top(); SEM.pop();
                     // cout << temp << endl;
                     for (unsigned int i=0; i<temp.size(); i++){
-                        QT.push_back(QT_Node("=", string(1,temp[i]), "_", name_+"["+to_string(i)+"]"));
+                        QT.push_back(QT_Node("=", "\'"+string(1,temp[i])+"\'", "_", name_+"["+to_string(i)+"]"));
                     }
-                    for (int i=temp.size(); i<num; i++){
-                        QT.push_back(QT_Node("=", " ", "_", name_+"["+to_string(i)+"]"));
-                    }
+                    // for (int i=temp.size(); i<num; i++){
+                    //     QT.push_back(QT_Node("=", " ", "_", name_+"["+to_string(i)+"]"));
+                    // }
                 }
                 else{
                     return false;
@@ -1572,7 +1608,12 @@ bool InitialValue()                     //赋初值
             t2 = SEM.top(); SEM.pop();
             t3 = SEM.top(); SEM.pop();
             // cout << t1 << " " << t2 << " " << t3 << endl;
-            QT.push_back(QT_Node("=", t1, "_", t2));
+            if (t3 == "char"){
+                 QT.push_back(QT_Node("=", "\'"+t1+"\'", "_", t2));
+            }
+            else{
+                QT.push_back(QT_Node("=", t1, "_", t2));
+            }
         }
         return true;
     }
@@ -1757,27 +1798,62 @@ bool AssignmentOrCall()                //赋值或函数调用
         if (!RightValue())   return false;
         string t1 = SEM.top();  SEM.pop();
         string t2 = SEM.top();  SEM.pop();
-        QT.push_back(QT_Node("=", t1, "_", t2));
-        if (token.type == "P" && token.value == ";"){
-            token = nextw();
-            return true;
-        }
-        else{
-            return false;
-        }
-    }
-    else if (token.type == "P" && token.value == "("){
-        token = nextw();
-        if (!ParameterList())   return false;
-        if (token.type == "P" && token.value == ")"){
-            token = nextw();
-            if (token.type == "P" && token.value == ";"){
+        // cout << t1 << " " << t2 << endl;
+        if (t1[t1.size()-1] == ')'){
+            if (token.type == "P" && token.value == "("){
                 token = nextw();
-                return true;
+                int SEM_num = SEM.size();
+                if (!ParameterList())   return false;
+                int param_num = (SEM.size() - SEM_num) / 2;
+                string func_name = t1.substr(0, t1.size()-2);
+                for (unsigned int i=0; i<SYNBL.size(); i++){
+                    if (SYNBL[i].name == func_name){
+                        if (SYNBL[i].cat == "F"){
+                            if (param_num != PFINFL[SYNBL[i].type].fn){
+                                ErrorMessage = "函数参数个数不匹配";
+                                cout << "Error: " << func_name << " 有 " << PFINFL[SYNBL[i].type].fn << " 个参数, 但是提供了 " << param_num << " 个参数" << endl;
+                                return false;
+                            }
+                            else{
+                                int param_id = PFINFL[SYNBL[i].type].param;
+                                for (int j=0; j<param_num; j++){
+                                    string t3 = SEM.top();  SEM.pop();
+                                    string t4 = SEM.top();  SEM.pop();
+                                    // cout << t3 << " " << t4 << endl;
+                                    QT.push_back(QT_Node("=", t3, "_", PARAML[param_id++].name));
+                                }
+                                QT_index++;
+                                QT.push_back(QT_Node("=", t1, "_", "t"+to_string(QT_index)));
+                                // T_type["t"+to_string(QT_index)] = GetTType(t1);
+                                QT.push_back(QT_Node("=", "t"+to_string(QT_index), "_", t2));
+                            }
+                        }
+                        else{
+                            ErrorMessage = "Error: " + func_name + " 不是一个函数";
+                            cout << "Error: " << func_name << " 不是一个函数" << endl;
+                            return false;
+                        }
+                    }
+                }
+                if (token.type == "P" && token.value == ")"){
+                    token = nextw();
+                }
+                else{
+                    return false;
+                }
             }
             else{
                 return false;
             }
+        }
+        else{
+            if (!CheckType(t1, t2))   return false;
+            QT.push_back(QT_Node("=", t1, "_", t2));
+        }
+
+        if (token.type == "P" && token.value == ";"){
+            token = nextw();
+            return true;
         }
         else{
             return false;
@@ -1790,35 +1866,48 @@ bool AssignmentOrCall()                //赋值或函数调用
 
 bool ParameterList()                    //参数列表
 {
-    if (token.type == "I"){
-        if (!Parameter())   return false;
-        if (!ParameterClosure())   return false;
-        return true;
-    }
-    else{
-        return true;
-    }
+    // if (token.type == "I"){
+    //     if (!Parameter())   return false;
+    //     if (!ParameterClosure())   return false;
+    //     return true;
+    // }
+    // else{
+    //     return true;
+    // }
+    if (!Parameter())   return false;
+    if (!ParameterClosure())   return false;
+    return true;
 }
 
 bool Parameter()                        //参数
 {
     if (token.type == "I"){
-       token = nextw();
-       return true;
+        SEM.push(token.type);
+        SEM.push(token.value);
+        token = nextw();
+        return true;
     }
     else if (token.type == "CI"){
+        SEM.push(token.type);
+        SEM.push(token.value);
         token = nextw();
         return true;
     }
     else if (token.type == "CF"){
+        SEM.push(token.type);
+        SEM.push(token.value);
         token = nextw();
         return true;
     }
     else if (token.type == "CC"){
+        SEM.push(token.type);
+        SEM.push(token.value);
         token = nextw();
         return true;
     }
     else if (token.type == "CS"){
+        SEM.push(token.type);
+        SEM.push(token.value);
         token = nextw();
         return true;
     }
@@ -2169,9 +2258,10 @@ bool BaseBlock()                    //基本块划分
 
     for(unsigned int i=1; i<QT.size(); i++){       //查找开始语句
         if(QT[i].op == "if")              begin[i+1] = 1;
-        else if(QT[i].op == "ifend")      begin[i] = 1;
+        else if(QT[i].op == "ifend")      begin[i+1] = 1;
         else if(QT[i].op == "elif")       begin[i+1] = 1;
-        else if(QT[i].op == "elifend")    begin[i] = 1;
+        else if(QT[i].op == "elifend")    begin[i+1] = 1;
+        // else if(QT[i].op == "elifend" && QT[i+1].op != "else")    begin[i+1] = 1;
         else if(QT[i].op == "else")       begin[i+1] = 1;
         else if(QT[i].op == "elseend")    begin[i] = 1;
         else if(QT[i].op == "while")      begin[i+1] = 1;
@@ -2179,9 +2269,10 @@ bool BaseBlock()                    //基本块划分
         else if(QT[i].op == "for")        begin[i+1] = 1;
         else if(QT[i].op == "forend")     begin[i+1] = 1;
         else if(QT[i].op == "do")         begin[i+1] = 1;
-
+        else if(QT[i].op == "funcbegin")  begin[i] = 1;
+        // else if(QT[i].op == "return")     begin[i+1] = 1;
+        else if(QT[i].num1[QT[i].num1.size()-1] == ')')begin[i] = 1;
     }
-
     for(unsigned int i=0; i<QT.size(); i++){
         if(begin[i] == 1)  tempid++;
         QT[i].block_id=tempid;
@@ -2238,8 +2329,8 @@ struct QT_Token{
     string type;
     int active;
     QT_Token(){
-        name = "";
-        type = "";
+        name = "_";
+        type = "_";
         active = false;
     }
     QT_Token(string n, string t, int a){
@@ -2248,6 +2339,11 @@ struct QT_Token{
         active = a;
     }
     QT_Token(const QT_Token& qt){
+        name = qt.name;
+        type = qt.type;
+        active = qt.active;
+    }
+    void operator =(const QT_Token& qt){
         name = qt.name;
         type = qt.type;
         active = qt.active;
@@ -2266,6 +2362,20 @@ struct QT_ACT_Node{
         num1 = n1;
         num2 = n2;
         res = r;
+    }
+    QT_ACT_Node(const QT_ACT_Node& qt){
+        block_id = qt.block_id;
+        op = qt.op;
+        num1 = qt.num1;
+        num2 = qt.num2;
+        res = qt.res;
+    }
+    QT_ACT_Node(){
+        block_id = 0;
+        op = "";
+        num1 = QT_Token();
+        num2 = QT_Token();
+        res = QT_Token();
     }
 };
 
@@ -2375,6 +2485,22 @@ void GetACT()
             if (flag == false) ACT_SYNBL.push_back(ACT_SYNBL_Node(QT_ACT[i].res.name, true));
         }
     }
+    for (int j = QT_ACT.size()-1; j >= last_block_p; j--) {
+        for (unsigned int k = 0; k < ACT_SYNBL.size(); k++){
+            if (QT_ACT[j].num1.name == ACT_SYNBL[k].name){
+                QT_ACT[j].num1.active = ACT_SYNBL[k].active;
+                ACT_SYNBL[k].active = true;
+            }
+            if (QT_ACT[j].num2.name == ACT_SYNBL[k].name){
+                QT_ACT[j].num2.active = ACT_SYNBL[k].active;
+                ACT_SYNBL[k].active = true;
+            }
+            if (QT_ACT[j].res.name == ACT_SYNBL[k].name){
+                QT_ACT[j].res.active = ACT_SYNBL[k].active;
+                ACT_SYNBL[k].active = false;
+            }
+        }
+    }
 }
 
 void show_ACT()
@@ -2389,10 +2515,17 @@ void show_ACT()
         cout << QT_ACT[i].op;
         cout.width(15);
         cout << QT_ACT[i].num1.name + "(" + to_string(QT_ACT[i].num1.active) + ")";
+        cout.width(10);
+        cout << QT_ACT[i].num1.type;
         cout.width(15);
         cout << QT_ACT[i].num2.name + "(" + to_string(QT_ACT[i].num2.active) + ")";
+        cout.width(10);
+        cout << QT_ACT[i].num2.type;
         cout.width(15);
-        cout << QT_ACT[i].res.name + "(" + to_string(QT_ACT[i].res.active) + ")" << endl;
+        cout << QT_ACT[i].res.name + "(" + to_string(QT_ACT[i].res.active) + ")";
+        cout.width(10);
+        cout << QT_ACT[i].res.type;
+        cout << endl;
     }
 }
 
@@ -2471,25 +2604,49 @@ void show_OBJ()
     cout << "数据段：" << endl;
     for (unsigned int i = 0; i < OBJ_DATE.size(); i++) {
         cout.width(10);
-        cout << i+1;
+        // cout <<i+1;
         cout.width(10);
         cout << OBJ_DATE[i].name;
         cout.width(20);
         cout << OBJ_DATE[i].type;
         cout.width(20);
+        
         cout << OBJ_DATE[i].content;
         cout << endl;
     }
     cout << "代码段：" << endl;
     for (unsigned int i=0; i<OBJ.size(); i++) {
         cout.width(10);
-        cout << OBJ[i].id;
+        cout << ".L"<<OBJ[i].id<<":";
         cout.width(10);
         cout << OBJ[i].op;
         cout.width(15);
-        cout << OBJ[i].num1;
-        cout.width(15);
-        cout << OBJ[i].num2 << endl;
+        if(OBJ[i].num1!=""&&OBJ[i].num2!="")
+        {
+            cout << OBJ[i].num1;
+            // cout.width(15);
+            cout<<" , ";
+            cout << OBJ[i].num2 << endl;
+        }
+        else{
+            cout << OBJ[i].num1;
+            cout<<"  ";
+            cout << OBJ[i].num2 << endl;
+        }
+    }
+}
+
+void InsertTemp(string name)
+{
+    if (name[0] == 't'){
+        bool flag = true;
+        for (unsigned int j = 0; j < OBJ_DATE.size(); j++){
+            if (OBJ_DATE[j].name == name){
+                flag = false;
+                break;
+            }
+        }
+        if (flag)   OBJ_DATE.push_back(OBJDate_Node(name, "temp", "DW 0"));
     }
 }
 
@@ -2497,6 +2654,12 @@ void GetOBJ()
 {
     for (unsigned int i=0; i<SYNBL.size(); i++){
         if (SYNBL[i].cat == "V" && (SYNBL[i].type >=0 && SYNBL[i].type <=3)) {
+            if (SYNBL[i].type == 0)         OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "int", "DW 0"));
+            else if (SYNBL[i].type == 1)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "float", "DW 0"));
+            else if (SYNBL[i].type == 2)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "double", "DW 0"));
+            else if (SYNBL[i].type == 3)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "char", "DB \' \'"));
+        }
+        else if (SYNBL[i].cat == "Vf" && (SYNBL[i].type >=0 && SYNBL[i].type <=3)) {
             if (SYNBL[i].type == 0)         OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "int", "DW 0"));
             else if (SYNBL[i].type == 1)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "float", "DW 0"));
             else if (SYNBL[i].type == 2)    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "double", "DW 0"));
@@ -2518,42 +2681,168 @@ void GetOBJ()
         else if (SYNBL[i].cat == "V" && TYPEL[SYNBL[i].type].type == "d"){
             for (unsigned int j=0; j<OBJ_STRUCT.size(); j++){
                 if (OBJ_STRUCT[j].name == SYNBL[SYNBL[i].addr].name){
-                    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, "Struct", "<>"));
+                    OBJ_DATE.push_back(OBJDate_Node(SYNBL[i].name, SYNBL[SYNBL[i].addr].name, ""));
+                    OBJ_DATE[OBJ_DATE.size()-1].content += "<";
+                    for (unsigned int k=0; k<OBJ_STRUCT[j].param.size(); k++){
+                        if (k != OBJ_STRUCT[j].param.size()-1) OBJ_DATE[OBJ_DATE.size()-1].content += ",";
+                    }
+                    OBJ_DATE[OBJ_DATE.size()-1].content += ">";
                 }
             }
         }
     }
 
+    int tmp = 0;
     for (unsigned int i=0; i<QT_ACT.size(); i++){
+        string bx; 
+        int si;
+        if(QT_ACT[i].num1.name[QT_ACT[i].num1.name.size()-1]==']')//数组数据
+        {
+            // cout << QT_ACT[i].num1.name << endl;
+            for (unsigned int j=0; j<QT_ACT[i].num1.name.size(); j++){
+                if (QT_ACT[i].num1.name[j] == '['){
+                    bx = QT_ACT[i].num1.name.substr(0, j);
+                    si = stoi(QT_ACT[i].num1.name.substr(j+1, QT_ACT[i].num1.name.size()-j-2));
+                    // cout << bx << " " << si << endl;
+                    // break;
+                }
+            }
+            OBJ.push_back(OBJ_Node(++OBJ_id,"lea","bx",bx));
+            if(si)
+            {
+                QT_ACT[i].num1.name="[bx+"+to_string(si*4)+"]";
+            }
+            else
+            {
+                QT_ACT[i].num1.name="[bx]";
+            }
+        }
+        else if(QT_ACT[i].num2.name[QT_ACT[i].num2.name.size()-1]==']')//数组数据
+        {
+            // cout << QT_ACT[i].num2.name << endl;
+            for (unsigned int j=0; j<QT_ACT[i].num2.name.size(); j++){
+                if (QT_ACT[i].num2.name[j] == '['){
+                    bx = QT_ACT[i].num2.name.substr(0, j);
+                    si = stoi(QT_ACT[i].num2.name.substr(j+1, QT_ACT[i].num2.name.size()-j-2));
+                    // cout << bx << " " << si << endl;
+                    // break;
+                }
+            }
+            OBJ.push_back(OBJ_Node(++OBJ_id,"lea","bx",bx));
+            if(si)
+            {
+                QT_ACT[i].num2.name="[bx+"+to_string(si*4)+"]";
+            }
+            else
+            {
+                QT_ACT[i].num2.name="[bx]";
+            }
+        }
+        else if(QT_ACT[i].res.name[QT_ACT[i].res.name.size()-1]==']')//数组数据
+        {
+            // cout << QT_ACT[i].res.name << endl;
+            for (unsigned int j=0; j<QT_ACT[i].res.name.size(); j++){
+                if (QT_ACT[i].res.name[j] == '['){
+                    bx = QT_ACT[i].res.name.substr(0, j);
+                    si = stoi(QT_ACT[i].res.name.substr(j+1, QT_ACT[i].res.name.size()-j-2));
+                    // cout << bx << " " << si << endl;
+                    // break;
+                }
+            }
+            OBJ.push_back(OBJ_Node(++OBJ_id,"lea","bx",bx));
+            if(si)
+            {
+                QT_ACT[i].res.name="[bx+"+to_string(si*4)+"]";
+            }
+            else
+            {
+                QT_ACT[i].res.name="[bx]";
+            }
+        }
+
+        // 判断结构体
+        if ((QT_ACT[i].num1.name[0]<'0' || QT_ACT[i].num1.name[0]>'9')&&QT_ACT[i].num1.name.find('.')){
+            for (unsigned int j=0; j<QT_ACT[i].num1.name.size(); j++){
+                if (QT_ACT[i].num1.name[j] == '.'){
+                    OBJ.push_back(OBJ_Node(++OBJ_id, "lea", "bx", QT_ACT[i].num1.name.substr(0,j)));
+                    // OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "[bx]", QT_ACT[i].num1.name.substr(j+1,QT_ACT[i].num1.name.size())));
+                    QT_ACT[i].num1.name="[bx]."+QT_ACT[i].num1.name.substr(j+1,QT_ACT[i].num1.name.size());
+                    break;
+                } 
+            }
+        }
+        if((QT_ACT[i].num2.name[0]<'0' || QT_ACT[i].num2.name[0]>'9')&&QT_ACT[i].num2.name.find('.'))
+        {
+            for (unsigned int j=0; j<QT_ACT[i].num2.name.size(); j++){
+                if(QT_ACT[i].num2.name[j] == '.')//有.则为结构体
+                {
+                    OBJ.push_back(OBJ_Node(++OBJ_id, "lea", "bx", QT_ACT[i].num2.name.substr(0,j)));
+                    // OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "[bx]", QT_ACT[i].num2.name.substr(j+1,QT_ACT[i].num2.name.size())));
+                    QT_ACT[i].num2.name="[bx]."+QT_ACT[i].num2.name.substr(j+1,QT_ACT[i].num2.name.size());
+                    break;
+                }
+            }
+        }
+        if((QT_ACT[i].res.name[0]<'0' || QT_ACT[i].res.name[0]>'9')&&QT_ACT[i].res.name.find('.'))
+        {
+            for (unsigned int j=0; j<QT_ACT[i].res.name.size(); j++){
+                if(QT_ACT[i].res.name[j] == '.')//有.则为结构体
+                {
+                    OBJ.push_back(OBJ_Node(++OBJ_id, "lea", "bx", QT_ACT[i].res.name.substr(0,j)));
+                    // OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "[bx]", QT_ACT[i].res.name.substr(j+1,QT_ACT[i].res.name.size())));
+                    QT_ACT[i].res.name="[bx]."+QT_ACT[i].res.name.substr(j+1,QT_ACT[i].res.name.size());
+                    break;
+                }
+            }
+        }
+
         if (i == 0 || QT_ACT[i].block_id != QT_ACT[i-1].block_id){
             if (i == 0) continue;
             else{
+                if (RDL.name != "" && RDL.active){
+                    OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));
+                    InsertTemp(RDL.name);
+                }
                 RDL.clear();
             }
         }
+
         if (QT_ACT[i].op == "-" || QT_ACT[i].op == "/" || QT_ACT[i].op == ">" || QT_ACT[i].op == "<" ||
             QT_ACT[i].op == ">=" || QT_ACT[i].op == "<="){
             if (RDL.name == ""){
                 OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "ax", QT_ACT[i].num1.name));
             }
             else{
-                if (RDL.name != QT_ACT[i].num1.name){
+                if (RDL.name != "" && RDL.name != QT_ACT[i].num1.name){
                     if (RDL.active){
                         OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                        InsertTemp(RDL.name);
                         OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "ax", QT_ACT[i].num1.name));
                     }
                     else{
                         OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "ax", QT_ACT[i].num1.name));
                     }
                 }
+                else if (RDL.name == QT_ACT[i].num1.name && RDL.name == QT_ACT[i].num2.name){
+                    OBJ.push_back(OBJ_Node(++OBJ_id, "mov", QT_ACT[i].num1.name ,"ax"));
+                    InsertTemp(QT_ACT[i].num1.name);
+                }
             }
 
             if (QT_ACT[i].op == "-")    OBJ.push_back(OBJ_Node(++OBJ_id, "sub", "ax", QT_ACT[i].num2.name));
-            else if (QT_ACT[i].op == "/") OBJ.push_back(OBJ_Node(++OBJ_id, "div", "ax", QT_ACT[i].num2.name));
-            else if (QT_ACT[i].op == ">") OBJ.push_back(OBJ_Node(++OBJ_id, "GT", "ax", QT_ACT[i].num2.name));
-            else if (QT_ACT[i].op == "<") OBJ.push_back(OBJ_Node(++OBJ_id, "LT", "ax", QT_ACT[i].num2.name));
-            else if (QT_ACT[i].op == ">=") OBJ.push_back(OBJ_Node(++OBJ_id, "GE", "ax", QT_ACT[i].num2.name));
-            else if (QT_ACT[i].op == "<=") OBJ.push_back(OBJ_Node(++OBJ_id, "LE", "ax", QT_ACT[i].num2.name));
+            else if (QT_ACT[i].op == "/"){
+                OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "cx", QT_ACT[i].num2.name));
+                OBJ.push_back(OBJ_Node(++OBJ_id, "xor", "dx", "dx"));
+                OBJ.push_back(OBJ_Node(++OBJ_id, "div", "", "cx"));
+            }
+            // else if (QT_ACT[i].op == ">") OBJ.push_back(OBJ_Node(++OBJ_id, "GT", "ax", QT_ACT[i].num2.name));
+            // else if (QT_ACT[i].op == "<") OBJ.push_back(OBJ_Node(++OBJ_id, "LT", "ax", QT_ACT[i].num2.name));
+            // else if (QT_ACT[i].op == ">=") OBJ.push_back(OBJ_Node(++OBJ_id, "GE", "ax", QT_ACT[i].num2.name));
+            // else if (QT_ACT[i].op == "<=") OBJ.push_back(OBJ_Node(++OBJ_id, "LE", "ax", QT_ACT[i].num2.name));
+            else if (QT_ACT[i].op == ">")OBJ.push_back(OBJ_Node(++OBJ_id, "cmp", "ax", QT_ACT[i].num2.name));
+            else if (QT_ACT[i].op == "<") OBJ.push_back(OBJ_Node(++OBJ_id, "cmp", "ax", QT_ACT[i].num2.name));
+            else if (QT_ACT[i].op == ">=")OBJ.push_back(OBJ_Node(++OBJ_id, "cmp", "ax", QT_ACT[i].num2.name));
+            else if (QT_ACT[i].op == "<=") OBJ.push_back(OBJ_Node(++OBJ_id, "cmp", "ax", QT_ACT[i].num2.name));
 
             RDL.name = QT_ACT[i].res.name;
             RDL.active = QT_ACT[i].res.active;
@@ -2562,37 +2851,760 @@ void GetOBJ()
             if (RDL.name == ""){
                 OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "ax", QT_ACT[i].num1.name));
                 if (QT_ACT[i].op == "+")    OBJ.push_back(OBJ_Node(++OBJ_id, "add", "ax", QT_ACT[i].num2.name));
-                else if (QT_ACT[i].op == "*") OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "ax", QT_ACT[i].num2.name));
+                else if (QT_ACT[i].op == "*"){
+                    OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "cx", QT_ACT[i].num2.name));
+                    OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "", "cx"));
+                }
+            }
+            else if (RDL.name == QT_ACT[i].num1.name && RDL.name == QT_ACT[i].num2.name){
+                OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                InsertTemp(RDL.name);
+                if (QT_ACT[i].op == "+")    OBJ.push_back(OBJ_Node(++OBJ_id, "add", "ax", QT_ACT[i].num2.name));
+                else if (QT_ACT[i].op == "*"){
+                    OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "cx", QT_ACT[i].num2.name));
+                    OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "", "cx"));
+                }
             }
             else if (RDL.name == QT_ACT[i].num1.name || RDL.name == QT_ACT[i].num2.name){
-                if (RDL.name == QT_ACT[i].num1.name && QT_ACT[i].num1.active){
-                    OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                if (RDL.name == QT_ACT[i].num1.name){
+                    if (QT_ACT[i].num1.active) OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                    InsertTemp(RDL.name);
                     if (QT_ACT[i].op == "+")    OBJ.push_back(OBJ_Node(++OBJ_id, "add", "ax", QT_ACT[i].num2.name));
-                    else if (QT_ACT[i].op == "*") OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "ax", QT_ACT[i].num2.name));
+                    else if (QT_ACT[i].op == "*"){
+                        OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "cx", QT_ACT[i].num2.name));
+                        OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "", "cx"));
+                    }
                 }
-                else if (RDL.name == QT_ACT[i].num2.name && QT_ACT[i].num2.active){
-                    OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                else if (RDL.name == QT_ACT[i].num2.name){
+                    if (QT_ACT[i].num2.active) OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                    InsertTemp(RDL.name);
                     if (QT_ACT[i].op == "+")    OBJ.push_back(OBJ_Node(++OBJ_id, "add", "ax", QT_ACT[i].num1.name));
-                    else if (QT_ACT[i].op == "*") OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "ax", QT_ACT[i].num1.name));
+                    else if (QT_ACT[i].op == "*"){
+                        OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "cx", QT_ACT[i].num2.name));
+                        OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "", "cx"));
+                    }
                 }
             }
             else{
-                if (RDL.active)     OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                if (RDL.name != "" && RDL.active)     OBJ.push_back(OBJ_Node(++OBJ_id, "mov", RDL.name, "ax"));
+                InsertTemp(RDL.name);
                 OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "ax", QT_ACT[i].num1.name));
                 if (QT_ACT[i].op == "+")    OBJ.push_back(OBJ_Node(++OBJ_id, "add", "ax", QT_ACT[i].num2.name));
-                else if (QT_ACT[i].op == "*") OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "ax", QT_ACT[i].num2.name));
+                else if (QT_ACT[i].op == "*"){
+                        OBJ.push_back(OBJ_Node(++OBJ_id, "mov", "cx", QT_ACT[i].num2.name));
+                        OBJ.push_back(OBJ_Node(++OBJ_id, "mul", "", "cx"));
+                    }
             }
 
             RDL.name = QT_ACT[i].res.name;
             RDL.active = QT_ACT[i].res.active;
         }
+        //跳转指令
+		else if(QT_ACT[i].op == "if" || QT_ACT[i].op=="elif")
+		{
+				if(RDL.name==""){
+					// OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));//移进
+                    // OBJ.push_back(OBJ_Node(++OBJ_id,"fj","ax",""));
+                    if(QT_ACT[i-1].op=="<")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jna","",""));
+                    else if(QT_ACT[i-1].op==">")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jnb","",""));
+                    else if(QT_ACT[i-1].op=="<=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"ja","",""));
+                    else if(QT_ACT[i-1].op==">=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jb","",""));
+
+					OBJ_SEM.push(OBJ_id);
+				}
+				else if(RDL.name==QT_ACT[i].num1.name)
+				{
+					if(RDL.active){
+						// OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));//移出
+						// OBJ.push_back(OBJ_Node(++OBJ_id,"fj","ax",""));
+                    if(QT_ACT[i-1].op=="<")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jna","",""));
+                    else if(QT_ACT[i-1].op==">")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jnb","",""));
+                    else if(QT_ACT[i-1].op=="<=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"ja","",""));
+                    else if(QT_ACT[i-1].op==">=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jb","",""));
+					}
+					else{
+						// OBJ.push_back(OBJ_Node(++OBJ_id,"fj","ax",""));
+                    if(QT_ACT[i-1].op=="<")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jna","",""));
+                    else if(QT_ACT[i-1].op==">")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jnb","",""));
+                    else if(QT_ACT[i-1].op=="<=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"ja","",""));
+                    else if(QT_ACT[i-1].op==">=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jb","",""));
+					}
+					OBJ_SEM.push(OBJ_id);
+					RDL.name="";
+					RDL.active = false;
+				}
+				else{
+					if(RDL.active)
+					{
+						// OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));
+						// OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));
+						// OBJ.push_back(OBJ_Node(++OBJ_id,"fj","ax",""));
+                    if(QT_ACT[i-1].op=="<")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jna","",""));
+                    else if(QT_ACT[i-1].op==">")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jnb","",""));
+                    else if(QT_ACT[i-1].op=="<=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"ja","",""));
+                    else if(QT_ACT[i-1].op==">=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jb","",""));
+                    }
+					else {
+						// OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));
+						// OBJ.push_back(OBJ_Node(++OBJ_id,"fj","ax",""));
+                    if(QT_ACT[i-1].op=="<")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jna","",""));
+                    else if(QT_ACT[i-1].op==">")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jnb","",""));
+                    else if(QT_ACT[i-1].op=="<=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"ja","",""));
+                    else if(QT_ACT[i-1].op==">=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jb","",""));
+					}
+					OBJ_SEM.push(OBJ_id);
+					RDL.name="";
+                    RDL.active = false;
+				}
+		}
+		else if(QT_ACT[i].op=="else")
+		{
+			if(RDL.active&&RDL.name!=""){
+				OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));
+                InsertTemp(RDL.name);
+            }
+			tmp = OBJ_SEM.top();
+			OBJ_SEM.pop();
+			OBJ[tmp-1].num2 = ".L"+to_string(OBJ_id+2);
+            OBJ.push_back(OBJ_Node(++OBJ_id,"jmp","",""));
+            OBJ_SEM.push(OBJ_id);
+		}
+        else if(QT_ACT[i].op=="elseend")
+        {
+            if(RDL.active&&RDL.name!=""){
+				OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));
+                InsertTemp(RDL.name);
+            }
+            tmp = OBJ_SEM.top();
+			OBJ_SEM.pop();
+			OBJ[tmp-1].num2 = ".L"+to_string(OBJ_id+1);
+        }
+        else if(QT_ACT[i].op=="ifend")
+        {
+            if(RDL.active&&RDL.name!=""){
+				OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));
+                InsertTemp(RDL.name);
+            }
+            tmp = OBJ_SEM.top();
+			OBJ_SEM.pop();
+			OBJ[tmp-1].num2 = ".L"+to_string(OBJ_id+1);
+        }
+        else if(QT_ACT[i].op=="while")
+            OBJ_SEM.push(OBJ_id);
+        else if(QT_ACT[i].op=="do")
+        {
+            if(RDL.name==""){
+                // OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));
+                // OBJ.push_back(OBJ_Node(++OBJ_id,"fj","ax",""));
+                    if(QT_ACT[i-1].op=="<")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jna","",""));
+                    else if(QT_ACT[i-1].op==">")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jnb","",""));
+                    else if(QT_ACT[i-1].op=="<=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"ja","",""));
+                    else if(QT_ACT[i-1].op==">=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jb","",""));
+                OBJ_SEM.push(OBJ_id);
+            }
+            else if(RDL.name==QT_ACT[i].num1.name)
+            {
+                if(RDL.active)
+                {
+                    // OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));//移出
+					// OBJ.push_back(OBJ_Node(++OBJ_id,"fj","ax",""));
+                    if(QT_ACT[i-1].op=="<")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jna","",""));
+                    else if(QT_ACT[i-1].op==">")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jnb","",""));
+                    else if(QT_ACT[i-1].op=="<=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"ja","",""));
+                    else if(QT_ACT[i-1].op==">=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jb","",""));
+                }
+                else
+                {
+                    // OBJ.push_back(OBJ_Node(++OBJ_id,"fj","ax",""));
+                    if(QT_ACT[i-1].op=="<")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jna","",""));
+                    else if(QT_ACT[i-1].op==">")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jnb","",""));
+                    else if(QT_ACT[i-1].op=="<=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"ja","",""));
+                    else if(QT_ACT[i-1].op==">=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jb","",""));   
+                }
+                OBJ_SEM.push(OBJ_id);
+                RDL.name="";
+                RDL.active = false;
+            }
+            else{
+                if(RDL.active)
+                {
+                    // OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));
+					// OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));
+					// OBJ.push_back(OBJ_Node(++OBJ_id,"fj","ax",""));
+                    if(QT_ACT[i-1].op=="<")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jna","",""));
+                    else if(QT_ACT[i-1].op==">")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jnb","",""));
+                    else if(QT_ACT[i-1].op=="<=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"ja","",""));
+                    else if(QT_ACT[i-1].op==">=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jb","",""));
+                }
+                else {
+					// OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));
+					// OBJ.push_back(OBJ_Node(++OBJ_id,"fj","ax",""));
+                    if(QT_ACT[i-1].op=="<")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jna","",""));
+                    else if(QT_ACT[i-1].op==">")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jnb","",""));
+                    else if(QT_ACT[i-1].op=="<=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"ja","",""));
+                    else if(QT_ACT[i-1].op==">=")
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"jb","",""));
+                }
+				OBJ_SEM.push(OBJ_id);
+				RDL.name="";
+                RDL.active = false;
+            }
+        }
+        else if(QT_ACT[i].op=="whend")
+        {
+            if(RDL.active&&RDL.name!=""){
+				OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));
+                InsertTemp(RDL.name);
+            }
+            RDL.name="";
+            RDL.active = false;
+            tmp = OBJ_SEM.top();
+			OBJ_SEM.pop();
+			OBJ[tmp-1].num2 = ".L"+to_string(OBJ_id+2);
+            OBJ.push_back(OBJ_Node(++OBJ_id,"jmp","",".L"+to_string(tmp-2)));
+        }
+        else if(QT_ACT[i].op=="for")
+            OBJ_SEM.push(OBJ_id);
+        else if(QT_ACT[i].op=="forend")
+        {
+            if(RDL.active&&RDL.name!=""){
+				OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));
+                InsertTemp(RDL.name);
+            }
+            RDL.name="";
+            RDL.active = false;
+            tmp = OBJ_SEM.top();
+			OBJ_SEM.pop();
+			OBJ[tmp-1].num2 = ".L"+to_string(OBJ_id+2);
+            OBJ.push_back(OBJ_Node(++OBJ_id,"jmp","",".L"+to_string(tmp)));
+        }
+        //赋值语句
+        else if(QT_ACT[i].op=="=")
+        {
+            if(QT_ACT[i].num1.name.find('.')!=string::npos&&QT_ACT[i].num1.name[0]>'0' && QT_ACT[i].num1.name[0]<'9')
+            {
+                // OBJ.push_back(OBJ_Node(++OBJ_id,"fld","",QT_ACT[i].num1.name));
+                // cout<<QT_ACT[i].num1.name.find('.')<<endl;
+            }
+            // else if((QT_ACT[i].num2.name[0]>'0' && QT_ACT[i].num2.name[0]<'9')&&QT_ACT[i].num2.name.find('.'))
+            // {
+            //     OBJ.push_back(OBJ_Node(++OBJ_id,"fld","",QT_ACT[i].num2.name));
+            // }
+            else
+            {
+                if(RDL.name=="")
+                {
+                    if (QT_ACT[i].num1.name[0] == '\''){
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"mov","al",QT_ACT[i].num1.name));//移进
+                         OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"al")); 
+                        InsertTemp(QT_ACT[i].res.name);
+                    }
+                    else{
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));//移进
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"ax")); 
+                        InsertTemp(QT_ACT[i].res.name);
+                    }
+                    // OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));//移进
+                    // OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"ax"));
+                    // InsertTemp(QT_ACT[i].res.name);
+                }
+                else if(RDL.name == QT_ACT[i].num1.name)
+                {
+                    if(RDL.name != "" && RDL.active)
+                    {   
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));//移出
+                        InsertTemp(RDL.name);
+                        if (QT_ACT[i].num1.name[0] == '\''){
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov","al",QT_ACT[i].num1.name));//移进
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"al")); 
+                            InsertTemp(QT_ACT[i].res.name);
+                        }
+                        else{
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));//移进
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"ax")); 
+                            InsertTemp(QT_ACT[i].res.name);
+                        }
+                        // OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));
+                        // OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"ax"));
+                        // InsertTemp(QT_ACT[i].res.name);
+                    }
+                }
+                else
+                {
+                    if(RDL.name != "" && RDL.active)
+                    {
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));//移出
+                        InsertTemp(RDL.name);
+                        if (QT_ACT[i].num1.name[0] == '\''){
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov","al",QT_ACT[i].num1.name));//移进
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"al")); 
+                            InsertTemp(QT_ACT[i].res.name);
+                        }
+                        else{
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));//移进
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"ax")); 
+                            InsertTemp(QT_ACT[i].res.name);
+                        }
+                    }
+                    else
+                    {
+                       if (QT_ACT[i].num1.name[0] == '\''){
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov","al",QT_ACT[i].num1.name));//移进
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"al")); 
+                            InsertTemp(QT_ACT[i].res.name);
+                        }
+                        else{
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ax",QT_ACT[i].num1.name));//移进
+                            OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"ax")); 
+                            InsertTemp(QT_ACT[i].res.name);
+                        }
+                    }
+                }
+                RDL.name=QT_ACT[i].res.name;
+            }
+        }
+    }
+    OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ah","4ch"));
+    OBJ.push_back(OBJ_Node(++OBJ_id,"int","","21h"));
+}
+
+struct DGA_Node
+{   
+    int id;
+    int left;
+    int right;
+    string op;
+    pair<string, string> main_sign;
+    vector<pair<string, string>> addi_sign;
+    DGA_Node(int _id, int _left, int _right, string _op, pair<string, string> _main_sign, vector<pair<string, string>> _addi_sign)
+    {
+        id = _id;
+        left = _left;
+        right = _right;
+        op = _op;
+        main_sign = _main_sign;
+        addi_sign = _addi_sign;
+    }
+    // DGA_Node()
+    // {
+    //     id = 0;
+    //     left = 0;
+    //     right = 0;
+    //     op = "";
+    //     main_sign = make_pair("","");
+    //     addi_sign.clear();
+    // }
+};
+
+vector<DGA_Node> DGA;
+vector<QT_ACT_Node> QT_ACT_EASY;
+int DGA_id = 0;
+
+void show_QT_EASY()
+{
+    cout << "————————————————————————————————————————————————优化后的四元式————————————————————————————————————————————————" << endl;
+    for (unsigned int i = 0; i < QT_ACT_EASY.size(); i++) {
+        cout.width(10);
+        cout << i;
+        cout.width(10);
+        cout << QT_ACT_EASY[i].block_id;
+        cout.width(10);
+        cout << QT_ACT_EASY[i].op;
+        cout.width(15);
+        cout << QT_ACT_EASY[i].num1.name ;
+        cout.width(15);
+        cout << QT_ACT_EASY[i].num2.name ;
+        cout.width(15);
+        cout << QT_ACT_EASY[i].res.name  << endl;
     }
 }
 
+void show_DGA()
+{
+    cout << "DGA" << endl;
+    for (unsigned int i = 0; i < DGA.size(); i++) {
+        cout.width(10);
+        cout << i;
+        cout.width(10);
+        cout << DGA[i].id;
+        cout.width(10);
+        cout << DGA[i].left-1;
+        cout.width(15);
+        cout << DGA[i].right-1;
+        cout.width(15);
+        cout << DGA[i].op;
+        cout.width(15);
+        cout << DGA[i].main_sign.first;
+        cout.width(15);
+        cout << DGA[i].main_sign.second;
+        cout.width(15);
+        for(unsigned int j=0;j<DGA[i].addi_sign.size();j++){
+            cout.width(15);
+            cout << DGA[i].addi_sign[j].first;
+            cout.width(15);
+            cout << DGA[i].addi_sign[j].second;
+        }
+        cout << endl;
+    }
+}
+
+int GetDGANode(string B)    //获取对应的DGA节点
+{
+    int n=0;
+    for(unsigned int i=0;i<DGA.size();i++)
+    {
+        if(DGA[i].main_sign.first==B)
+        {
+            n=i+1;
+        }
+        for(unsigned int j=0;j<DGA[i].addi_sign.size();j++)
+        {
+            if(DGA[i].addi_sign[j].first==B)
+            {
+                n=i+1;
+            }
+        }
+    }
+    return n;
+}
+
+void MakeDGALeaf(string B, string type)   //创建叶子节点
+{
+    // DGA_Node temp;
+    // temp.id=DGA.size();
+    // temp.main_sign.name=B;
+    // temp.main_sign.type=type;
+    DGA.push_back(DGA_Node(DGA.size(),0,0,"_",make_pair(B,type),vector<pair<string, string>>()));
+}
+
+int MakeDGANode(string op, string B, string C)
+{
+    // DGA_Node temp;
+    // temp.id=DGA.size();
+    // temp.op=op;
+    // temp.left=GetDGANode(B);
+    // temp.right=GetDGANode(C);
+    DGA.push_back(DGA_Node(DGA.size(),GetDGANode(B),GetDGANode(C),op,make_pair("_","_"),vector<pair<string, string>>()));
+    return DGA.size();
+}
+
+void DeleteDGANode(int id)              //删除DGA节点
+{
+    DGA[id-1].main_sign.first="_";
+    DGA[id-1].id=0;
+    for(unsigned int i=id-1;i<DGA.size()-1;i++)
+    {
+        DGA[i].id=DGA[i+1].id;
+        DGA[i].main_sign.first=DGA[i+1].main_sign.first;
+        DGA[i].main_sign.second=DGA[i+1].main_sign.second;
+        DGA[i].left=DGA[i+1].left;
+        DGA[i].right=DGA[i+1].right;
+        DGA[i].op=DGA[i+1].op;
+        DGA[i].addi_sign.clear();
+        for(unsigned int j=0;j<DGA[i+1].addi_sign.size();j++) {
+            DGA[i].addi_sign.push_back(make_pair(DGA[i+1].addi_sign[j].first,DGA[i+1].addi_sign[j].second));
+        }
+    }
+    DGA.pop_back();
+}
+
+int FindDGANode(string op, string B, string C)
+{
+    int n=0;
+    int lt,rt;
+    lt=GetDGANode(B);
+    rt=GetDGANode(C);
+    for(unsigned int i=0;i<DGA.size();i++)
+    {
+        if (DGA[i].op == op && DGA[i].left == lt && DGA[i].right == rt)
+        {
+            n=i+1;
+            break;
+        }
+    }
+    return n;
+}
+
+void DGAaddition(int id, string A, string type)         //为DGA结点添加附加标记
+{
+ 
+    int k;
+    QT_Token temp;
+    k=GetDGANode(A);
+    if(k!=0){
+        for(unsigned j=0;j<DGA[k-1].addi_sign.size();j++)
+        {
+            if(DGA[k-1].addi_sign[j].first==A)
+            {
+                // DGA[k-1].addi_sign.erase(DGA[k-1].addi_sign.begin()+j-1);
+                DGA[k-1].addi_sign[j].first = "_"+DGA[k-1].addi_sign[j].first;
+                DGA[k-1].addi_sign[j].second = "_";
+            }
+        }
+    }
+    if(DGA[id-1].main_sign.first!="_"){
+        // cout << DGA[id-1].addi_sign.size() << endl;
+        temp.name=A;
+        temp.type=type;
+        DGA[id-1].addi_sign.push_back(make_pair(A,type));
+    }
+    else{
+        DGA[id-1].main_sign.first=A;
+        DGA[id-1].main_sign.second=type;
+    }
+
+    if(DGA[id-1].main_sign.second=="temp"){
+        for(unsigned j=0;j<DGA[id-1].addi_sign.size();j++)
+        {
+            if(DGA[id-1].addi_sign[j].second=="variable")
+            {
+                string tempname;
+                tempname=DGA[id-1].addi_sign[j].first;
+                DGA[id-1].addi_sign[j].first=DGA[id-1].main_sign.first;
+                DGA[id-1].main_sign.first=tempname;
+                DGA[id-1].main_sign.second="variable";
+                DGA[id-1].addi_sign[j].second="temp";
+            }
+        }
+    }
+
+
+}
+
+int JudgeType(string op)
+{
+    if(op=="=")return 0;
+    else if(op==">"||op=="<"||op=="+"||op=="-"||op=="*"||op=="/")return 1;
+    else if(op=="while"||op=="whend"||op=="do"||op=="if"||op=="ifend"||op=="for"||
+            op=="forend"||op=="elif"||op=="elifend"||op=="else"||op=="elseend"||
+            op=="funcbegin"||op=="funcend"||op=="return"||op=="break"||op=="continue")return 2;
+    else return -1;
+}
+
+string CoutValue(string op, string B, string C)
+{
+    string p;
+    if(op=="+") p=to_string(atoi(B.c_str())+atoi(C.c_str()));
+    if(op=="-") p=to_string(atoi(B.c_str())-atoi(C.c_str()));
+    if(op=="*") p=to_string(atoi(B.c_str())*atoi(C.c_str()));
+    if(op=="/") p=to_string(atoi(B.c_str())/atoi(C.c_str()));
+    return p;
+}
+
+void MakeEasyQT(int block)
+{
+
+    QT_ACT_Node tempNode;
+    int left,right;
+    for(unsigned int i=0;i<DGA.size();i++){
+        if(DGA[i].op=="_"){
+            for(unsigned int j=0;j<DGA[i].addi_sign.size();j++){
+                if(DGA[i].addi_sign[j].second=="variable"){
+                    tempNode.block_id = block;
+                    tempNode.op = "=";
+                    tempNode.num2.name = "_";
+                    tempNode.num2.type = "_";
+                    tempNode.num1.name = DGA[i].main_sign.first;
+                    tempNode.num1.type = DGA[i].main_sign.second;
+                    tempNode.res.name = DGA[i].addi_sign[j].first;
+                    tempNode.res.type = DGA[i].addi_sign[j].second;
+                    QT_ACT_EASY.push_back(tempNode);
+                }
+            }
+        }
+        else{
+            left=DGA[i].left;
+            right=DGA[i].right;
+            tempNode.res.name=DGA[i].main_sign.first;
+            tempNode.res.type=DGA[i].main_sign.second;
+            tempNode.block_id=block;
+            tempNode.op=DGA[i].op;
+            tempNode.num1.name=DGA[left-1].main_sign.first;
+            tempNode.num1.type=DGA[left-1].main_sign.second;
+            tempNode.num2.name=DGA[right-1].main_sign.first;
+            tempNode.num2.type=DGA[right-1].main_sign.second;
+            QT_ACT_EASY.push_back(tempNode);
+        
+        }
+    }
+
+}
+
+void OptimizeDGA()
+{
+    int i=0;
+    int j=0;
+    int blockmax=QT_ACT[QT_ACT.size()-1].block_id;
+    int nleft,nright;
+    int bn;
+    int n;
+    string p,B,C,A;
+
+    for(bn=1;bn<=blockmax;bn++){
+        if(JudgeType(QT_ACT[i].op)==2){
+            QT_ACT_EASY.push_back(QT_ACT[i]);
+            i++;
+            bn=QT_ACT[i].block_id;
+        }
+
+        while(i != int(QT_ACT.size()) && QT_ACT[i].op!="_" && QT_ACT[i].block_id==bn){
+            // show_DGA();
+
+            A=QT_ACT[i].res.name;
+            B=QT_ACT[i].num1.name;
+            C=QT_ACT[i].num2.name;
+            nleft=0;
+            nright=0;
+            // cout << A << " " << B << " " << C << endl;
+            if((JudgeType(QT_ACT[i].op)!=2)&&GetDGANode(B)==0){
+                MakeDGALeaf(B,QT_ACT[i].num1.type);
+                nleft=GetDGANode(B);
+            }
+            switch(JudgeType(QT_ACT[i].op)){
+                case 0:     
+                            n=GetDGANode(B);
+                            DGAaddition(n,A,QT_ACT[i].res.type);
+                            break;
+                case 1:     
+                            if(GetDGANode(C)==0){
+                                MakeDGALeaf(C,QT_ACT[i].num2.type);
+                                nright=GetDGANode(C);
+                            }
+                            
+                            j=0;
+                            if((QT_ACT[i].op=="*")||(QT_ACT[i].op=="/")||
+                               (QT_ACT[i].op=="+")||(QT_ACT[i].op=="-")){
+                                j=1;
+                            }
+                            if((QT_ACT[i].num1.type=="constant" || DGA[GetDGANode(QT_ACT[i].num1.name)-1].main_sign.second=="constant") &&
+                               (QT_ACT[i].num2.type=="constant" || DGA[GetDGANode(QT_ACT[i].num2.name)-1].main_sign.second=="constant")
+                               &&(j==1)){
+                                if (QT_ACT[i].num1.type!="constant" && DGA[GetDGANode(QT_ACT[i].num1.name)-1].main_sign.second=="constant") B = DGA[GetDGANode(QT_ACT[i].num1.name)-1].main_sign.first;
+                                if (QT_ACT[i].num2.type!="constant" && DGA[GetDGANode(QT_ACT[i].num2.name)-1].main_sign.second=="constant") C = DGA[GetDGANode(QT_ACT[i].num2.name)-1].main_sign.first;
+                                p=CoutValue(QT_ACT[i].op,B,C);
+                                if(nright!=0) DeleteDGANode(nright);
+                                if(nleft!=0) DeleteDGANode(nleft);
+                                if((n=GetDGANode(p))==0){
+                                    MakeDGALeaf(p,"constant");
+                                    n=GetDGANode(p);
+                                }
+                            }
+                            else{
+                                if((n=FindDGANode(QT_ACT[i].op,B,C))==0){
+                                    n=MakeDGANode(QT_ACT[i].op,B,C);
+                                }
+                            }
+                            DGAaddition(n,A,QT_ACT[i].res.type);
+                            break;
+                case 2:  
+                            break;                 
+            }
+            i++;
+        }
+        MakeEasyQT(bn);
+        if(JudgeType(QT_ACT[i-1].op)==2){
+            QT_ACT_EASY.push_back(QT_ACT[i-1]);
+        }
+
+        // show_DGA();
+        // show_QT_EASY();
+        DGA.clear();
+    }
+}
+
+void WriteASM()
+{
+    ofstream outFile("ans.txt");
+    outFile << "DSEG SEGMENT" << endl;
+
+    for (unsigned int i = 0; i < OBJ_STRUCT.size(); i++) {
+        outFile <<  OBJ_STRUCT[i].name  << "\tSTRUC" << endl;
+        for (unsigned int j = 0; j < OBJ_STRUCT[i].param.size(); j++) {
+            if (OBJ_STRUCT[i].param[j].second == 0) outFile << OBJ_STRUCT[i].param[j].first  << "\tDW 0" << endl;
+            else if (OBJ_STRUCT[i].param[j].second == 1) outFile << OBJ_STRUCT[i].param[j].first  << "\tDW 0" << endl;
+            else if (OBJ_STRUCT[i].param[j].second == 2) outFile << OBJ_STRUCT[i].param[j].first  << "\ttDW 0" << endl;
+            else if (OBJ_STRUCT[i].param[j].second == 3) outFile << OBJ_STRUCT[i].param[j].first  << "\tDW \' \'" << endl;
+        }
+        outFile <<  OBJ_STRUCT[i].name  << "\tENDS" << endl;
+    }
+    
+    for (unsigned int i = 0; i < OBJ_DATE.size(); i++) {
+        if (OBJ_DATE[i].content[0] == '<'){
+            outFile << OBJ_DATE[i].name << "\t" << OBJ_DATE[i].type << '\t' << OBJ_DATE[i].content << endl;
+        }
+        else{
+            outFile << OBJ_DATE[i].name << "\t" << OBJ_DATE[i].content << endl;
+        }
+    }
+    outFile << "DSEG ENDS" << endl;
+    outFile << "SSEG SEGMENT STACK" << endl;
+    outFile << "SKTOP DB 20 DUP(0)" << endl;
+    outFile << "SSEG ENDS" << endl;
+    outFile << "CSEG SEGMENT" << endl;
+    outFile << "ASSUME CS:CSEG ,DS:DSEG, SS:SSEG" << endl;
+    outFile << "START:" << endl;
+    outFile << "\t\tmov ax,\tDSEG" << endl;
+    outFile << "\t\tmov ds,\tax" << endl;
+    outFile << "\t\tmov ax,\tSSEG" << endl;
+    outFile << "\t\tmov ss,\tax" << endl;
+    outFile << "\t\tmov sp,\tLENGTH SKTOP" << endl;
+    for (unsigned int i=0; i<OBJ.size(); i++) {
+        outFile << ".L" << OBJ[i].id << ":\t\t";
+        outFile << OBJ[i].op << " ";
+        if(OBJ[i].num1 != "" && OBJ[i].num2 != ""){
+            outFile << OBJ[i].num1 << ",\t" << OBJ[i].num2 << endl;
+        }
+        else{
+            outFile << OBJ[i].num1 << "\t" << OBJ[i].num2 << endl;
+        }
+    }
+    outFile << "CSEG ENDS" << endl;
+    outFile << "END START" << endl;
+    outFile.close();
+}
 
 int main()
 {
-    ifstream inFile("test.txt");
+    ifstream inFile("test2.txt");
     while (getline(inFile, t_str))  str += t_str + '\n';
     str += "#\n";
     cout << str << endl;
@@ -2608,19 +3620,18 @@ int main()
     else{
         cout << token.type << " " << token.value << endl;
         cout << "语法分析失败" << endl;
+        return 0;
     }
 
     show_SYNBL();       //显示符号表
-    show_QT();          //显示四元式
 
-    while(!SEM.empty()){
-        cout << SEM.top() << endl;
-        SEM.pop();
-    }
+    // while(!SEM.empty()){
+    //     cout << SEM.top() << endl;
+    //     SEM.pop();
+    // }
 
     BaseBlock();        //基本块划分
-    // ConstEasy();        //常值表达式节省
-    // show_QT();          //显示四元式
+    show_QT();          //显示四元式
 
     for (unsigned int i=0; i<QT.size(); i++){           //四元式添加活跃信息
         QT_ACT.push_back(QT_ACT_Node(QT[i].block_id, QT[i].op,
@@ -2629,11 +3640,26 @@ int main()
         QT_Token(QT[i].res,  GetQTType(QT[i].res), -1)));
     }
 
+    OptimizeDGA();  //优化DGA
+    show_QT_EASY(); //显示优化后的四元式
+
+    QT_ACT.clear();
+    for (unsigned int i=0; i<QT_ACT_EASY.size(); i++){           //四元式添加活跃信息
+        QT_ACT.push_back(QT_ACT_Node(QT_ACT_EASY[i].block_id, QT_ACT_EASY[i].op,
+        QT_Token(QT_ACT_EASY[i].num1.name, GetQTType(QT_ACT_EASY[i].num1.name), -1),
+        QT_Token(QT_ACT_EASY[i].num2.name, GetQTType(QT_ACT_EASY[i].num2.name), -1),
+        QT_Token(QT_ACT_EASY[i].res.name, GetQTType(QT_ACT_EASY[i].res.name), -1)));
+    }
+
     GetACT();       //获取活跃信息
     show_ACT();     //显示带活跃信息的四元式
 
     GetOBJ();       //获取目标代码
     show_OBJ();     //显示目标代码
 
+    // cout << OBJ_SEM.size() << endl;
+
+    WriteASM();     //写入ASM文件
+    
     return 0;
 }

@@ -1,0 +1,16 @@
+int main(){
+    struct Node
+    {
+        int type;
+        float value;
+    };
+    int i;
+
+    struct Node ppp;
+    ppp.type = 5;
+    ppp.value = 7.7;
+
+    i = ppp.value + i;
+
+    return 0;
+}
