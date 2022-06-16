@@ -2529,6 +2529,20 @@ void show_ACT()
     }
 }
 
+struct OBJFUNC_Node{
+    string name;
+    string returnName;
+    string returnType;
+    int funcBegin;
+    int funcEnd;
+    OBJFUNC_Node(string name, string returnName, string returnType, int funcBegin, int funcEnd) {
+        this->name = name;
+        this->returnName = returnName;
+        this->returnType = returnType;
+        this->funcBegin = funcBegin;
+        this->funcEnd = funcEnd;
+    }
+};
 struct OBJStruct_Node{
     string name;
     vector<pair<string, int>> param;
@@ -2579,6 +2593,7 @@ struct RDL_Node{
     }
 };
 
+vector<OBJFUNC_Node> OBJ_FUNC;
 vector<OBJStruct_Node> OBJ_STRUCT;
 vector<OBJDate_Node> OBJ_DATE;
 vector<OBJ_Node> OBJ;
@@ -2600,6 +2615,12 @@ void show_OBJ()
             else if (OBJ_STRUCT[i].param[j].second == 3) cout << OBJ_STRUCT[i].param[j].first << " char " << "DW \' \'" << endl;
         }
         cout <<  OBJ_STRUCT[i].name  << " ENDS" << endl;
+    }
+    cout << "函数：" << endl;
+    for (unsigned int i = 0; i < OBJ_FUNC.size(); i++) {
+        cout << OBJ_FUNC[i].name << " FUNC" << endl;
+        cout << "RETURN " << OBJ_FUNC[i].returnName << " " << OBJ_FUNC[i].returnType << endl;
+        cout << OBJ_FUNC[i].funcBegin << " " << OBJ_FUNC[i].funcEnd << endl;
     }
     cout << "数据段：" << endl;
     for (unsigned int i = 0; i < OBJ_DATE.size(); i++) {
@@ -2694,6 +2715,7 @@ void GetOBJ()
 
     int tmp = 0;
     for (unsigned int i=0; i<QT_ACT.size(); i++){
+        // cout << "QT_ACT[" << i << "] = " << QT_ACT[i].op << " " << QT_ACT[i].res.name << endl;
         string bx; 
         int si;
         if(QT_ACT[i].num1.name[QT_ACT[i].num1.name.size()-1]==']')//数组数据
@@ -2797,7 +2819,7 @@ void GetOBJ()
         }
 
         if (i == 0 || QT_ACT[i].block_id != QT_ACT[i-1].block_id){
-            if (i == 0) continue;
+            if (i == 0) ;
             else{
                 if (RDL.name != "" && RDL.active){
                     OBJ.push_back(OBJ_Node(++OBJ_id,"mov",RDL.name,"ax"));
@@ -3125,17 +3147,17 @@ void GetOBJ()
                 // OBJ.push_back(OBJ_Node(++OBJ_id,"fld","",QT_ACT[i].num1.name));
                 // cout<<QT_ACT[i].num1.name.find('.')<<endl;
             }
-            // else if((QT_ACT[i].num2.name[0]>'0' && QT_ACT[i].num2.name[0]<'9')&&QT_ACT[i].num2.name.find('.'))
-            // {
-            //     OBJ.push_back(OBJ_Node(++OBJ_id,"fld","",QT_ACT[i].num2.name));
-            // }
+            else if (QT_ACT[i].num1.name[QT_ACT[i].num1.name.size()-1] == ')'){
+                OBJ.push_back(OBJ_Node(++OBJ_id,"call","",QT_ACT[i].num1.name.substr(0,QT_ACT[i].num1.name.size()-2)));
+                OBJ.push_back(OBJ_Node(++OBJ_id,"mov", QT_ACT[i].res.name, "ax"));
+            }
             else
             {
                 if(RDL.name=="")
                 {
                     if (QT_ACT[i].num1.name[0] == '\''){
                         OBJ.push_back(OBJ_Node(++OBJ_id,"mov","al",QT_ACT[i].num1.name));//移进
-                         OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"al")); 
+                        OBJ.push_back(OBJ_Node(++OBJ_id,"mov",QT_ACT[i].res.name,"al")); 
                         InsertTemp(QT_ACT[i].res.name);
                     }
                     else{
@@ -3201,6 +3223,23 @@ void GetOBJ()
                 }
                 RDL.name=QT_ACT[i].res.name;
             }
+        }
+        else if (QT_ACT[i].op == "funcbegin")
+        {
+            OBJ_FUNC.push_back(OBJFUNC_Node(QT_ACT[i].res.name, "", "", OBJ_id+1, 0));
+        }
+        else if (QT_ACT[i].op == "funcend"){
+            // cout << OBJ_FUNC.size() << endl;
+            OBJ_FUNC[OBJ_FUNC.size()-1].returnName = QT_ACT[i].num1.name;
+            for (unsigned int j=0; j<OBJ_DATE.size(); j++)
+            {
+                if (OBJ_DATE[j].name == QT_ACT[i].num1.name)
+                {
+                    OBJ_FUNC[OBJ_FUNC.size()-1].returnType = OBJ_DATE[j].type;
+                    break;
+                }
+            }
+            OBJ_FUNC[OBJ_FUNC.size()-1].funcEnd = OBJ_id+1;
         }
     }
     OBJ.push_back(OBJ_Node(++OBJ_id,"mov","ah","4ch"));
@@ -3564,7 +3603,7 @@ void WriteASM()
             else if (OBJ_STRUCT[i].param[j].second == 2) outFile << OBJ_STRUCT[i].param[j].first  << "\ttDW 0" << endl;
             else if (OBJ_STRUCT[i].param[j].second == 3) outFile << OBJ_STRUCT[i].param[j].first  << "\tDW \' \'" << endl;
         }
-        outFile <<  OBJ_STRUCT[i].name  << "\tENDS" << endl;
+        outFile <<  OBJ_STRUCT[i].name  << "\tENDS" << endl << endl;
     }
     
     for (unsigned int i = 0; i < OBJ_DATE.size(); i++) {
@@ -3575,19 +3614,34 @@ void WriteASM()
             outFile << OBJ_DATE[i].name << "\t" << OBJ_DATE[i].content << endl;
         }
     }
-    outFile << "DSEG ENDS" << endl;
+    outFile << "DSEG ENDS" << endl << endl;
     outFile << "SSEG SEGMENT STACK" << endl;
     outFile << "SKTOP DB 20 DUP(0)" << endl;
-    outFile << "SSEG ENDS" << endl;
+    outFile << "SSEG ENDS" << endl << endl;
     outFile << "CSEG SEGMENT" << endl;
     outFile << "ASSUME CS:CSEG ,DS:DSEG, SS:SSEG" << endl;
+    for (unsigned int i=0; i<OBJ_FUNC.size()-1; i++) {
+        outFile << OBJ_FUNC[i].name << "\tPROC" << endl;
+        for (int j=OBJ_FUNC[i].funcBegin-1; j<OBJ_FUNC[i].funcEnd; j++) {
+            outFile << ".L" << j << ":\t\t";
+            outFile << OBJ[j].op << " ";
+            if(OBJ[j].num1 != "" && OBJ[j].num2 != ""){
+                outFile << OBJ[j].num1 << ",\t" << OBJ[j].num2 << endl;
+            }
+            else{
+                outFile << OBJ[j].num1 << "\t" << OBJ[j].num2 << endl;
+            }
+        }
+        outFile << "\t\tRET" << endl;
+        outFile << OBJ_FUNC[i].name << "\tENDP" << endl << endl;
+    }
     outFile << "START:" << endl;
     outFile << "\t\tmov ax,\tDSEG" << endl;
     outFile << "\t\tmov ds,\tax" << endl;
     outFile << "\t\tmov ax,\tSSEG" << endl;
     outFile << "\t\tmov ss,\tax" << endl;
     outFile << "\t\tmov sp,\tLENGTH SKTOP" << endl;
-    for (unsigned int i=0; i<OBJ.size(); i++) {
+    for (unsigned int i=OBJ_FUNC[OBJ_FUNC.size()-1].funcBegin-1; i<OBJ.size(); i++) {
         outFile << ".L" << OBJ[i].id << ":\t\t";
         outFile << OBJ[i].op << " ";
         if(OBJ[i].num1 != "" && OBJ[i].num2 != ""){
@@ -3604,7 +3658,7 @@ void WriteASM()
 
 int main()
 {
-    ifstream inFile("test2.txt");
+    ifstream inFile("test.txt");
     while (getline(inFile, t_str))  str += t_str + '\n';
     str += "#\n";
     cout << str << endl;
@@ -3660,7 +3714,7 @@ int main()
     // cout << OBJ_SEM.size() << endl;
 
     WriteASM();     //写入ASM文件
-    
+
     
     return 0;
 }

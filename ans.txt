@@ -3,6 +3,7 @@ Node	STRUC
 anss	DW 0
 value	DW 0
 Node	ENDS
+
 num	DW 0
 j	DB ' '
 year	DW 0
@@ -13,21 +14,27 @@ i	DW 0
 b	DW 0
 ppp	Node	<,>
 DSEG ENDS
+
 SSEG SEGMENT STACK
 SKTOP DB 20 DUP(0)
 SSEG ENDS
+
 CSEG SEGMENT
 ASSUME CS:CSEG ,DS:DSEG, SS:SSEG
+find	PROC
+.L0:		mov ax,	2
+.L1:		mov cx,	num
+.L2:		mul 	cx
+.L3:		mov num,	ax
+		RET
+find	ENDP
+
 START:
 		mov ax,	DSEG
 		mov ds,	ax
 		mov ax,	SSEG
 		mov ss,	ax
 		mov sp,	LENGTH SKTOP
-.L1:		mov ax,	2
-.L2:		mov cx,	num
-.L3:		mul 	cx
-.L4:		mov num,	ax
 .L5:		mov al,	'c'
 .L6:		mov j,	al
 .L7:		mov ax,	365
@@ -108,7 +115,7 @@ START:
 .L82:		xor dx,	dx
 .L83:		div 	cx
 .L84:		mov b,	ax
-.L85:		mov ax,	find()
+.L85:		call 	find
 .L86:		mov b,	ax
 .L87:		mov ah,	4ch
 .L88:		int 	21h
