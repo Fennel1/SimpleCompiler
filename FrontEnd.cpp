@@ -3623,7 +3623,7 @@ void WriteASM()
     for (unsigned int i=0; i<OBJ_FUNC.size()-1; i++) {
         outFile << OBJ_FUNC[i].name << "\tPROC" << endl;
         for (int j=OBJ_FUNC[i].funcBegin-1; j<OBJ_FUNC[i].funcEnd; j++) {
-            outFile << ".L" << j << ":\t\t";
+            outFile << ".L" << j+1 << ":\t\t";
             outFile << OBJ[j].op << " ";
             if(OBJ[j].num1 != "" && OBJ[j].num2 != ""){
                 outFile << OBJ[j].num1 << ",\t" << OBJ[j].num2 << endl;
@@ -3715,6 +3715,5 @@ int main()
 
     WriteASM();     //写入ASM文件
 
-    
     return 0;
 }

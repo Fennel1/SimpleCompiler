@@ -68,6 +68,7 @@ public:
         textBrowser->setGeometry(QRect(0, 89, 600, 1241));
         QFont font;
         font.setFamily(QString::fromUtf8("\345\276\256\350\275\257\351\233\205\351\273\221"));
+        font.setPointSize(11);
         textBrowser->setFont(font);
         pushButton = new QPushButton(centralWidget);
         pushButton->setObjectName(QString::fromUtf8("pushButton"));
@@ -90,6 +91,9 @@ public:
         listView_2 = new QListView(centralWidget);
         listView_2->setObjectName(QString::fromUtf8("listView_2"));
         listView_2->setGeometry(QRect(600, 770, 600, 561));
+        QFont font2;
+        font2.setPointSize(11);
+        listView_2->setFont(font2);
         textBrowser_4 = new QTextBrowser(centralWidget);
         textBrowser_4->setObjectName(QString::fromUtf8("textBrowser_4"));
         textBrowser_4->setGeometry(QRect(1200, 0, 601, 91));
@@ -97,6 +101,7 @@ public:
         listView_3 = new QListView(centralWidget);
         listView_3->setObjectName(QString::fromUtf8("listView_3"));
         listView_3->setGeometry(QRect(1200, 90, 600, 200));
+        listView_3->setFont(font2);
         textBrowser_5 = new QTextBrowser(centralWidget);
         textBrowser_5->setObjectName(QString::fromUtf8("textBrowser_5"));
         textBrowser_5->setGeometry(QRect(1200, 290, 601, 91));
@@ -104,6 +109,7 @@ public:
         listView_4 = new QListView(centralWidget);
         listView_4->setObjectName(QString::fromUtf8("listView_4"));
         listView_4->setGeometry(QRect(1200, 380, 600, 200));
+        listView_4->setFont(font2);
         textBrowser_6 = new QTextBrowser(centralWidget);
         textBrowser_6->setObjectName(QString::fromUtf8("textBrowser_6"));
         textBrowser_6->setGeometry(QRect(1200, 580, 601, 91));
@@ -111,6 +117,7 @@ public:
         listView_5 = new QListView(centralWidget);
         listView_5->setObjectName(QString::fromUtf8("listView_5"));
         listView_5->setGeometry(QRect(1200, 670, 600, 271));
+        listView_5->setFont(font2);
         textBrowser_7 = new QTextBrowser(centralWidget);
         textBrowser_7->setObjectName(QString::fromUtf8("textBrowser_7"));
         textBrowser_7->setGeometry(QRect(1200, 940, 601, 91));
@@ -118,6 +125,7 @@ public:
         listView_6 = new QListView(centralWidget);
         listView_6->setObjectName(QString::fromUtf8("listView_6"));
         listView_6->setGeometry(QRect(1200, 1030, 600, 300));
+        listView_6->setFont(font2);
         pushButton_2 = new QPushButton(centralWidget);
         pushButton_2->setObjectName(QString::fromUtf8("pushButton_2"));
         pushButton_2->setGeometry(QRect(1800, 0, 361, 91));
@@ -133,6 +141,7 @@ public:
         listView_7 = new QListView(centralWidget);
         listView_7->setObjectName(QString::fromUtf8("listView_7"));
         listView_7->setGeometry(QRect(1800, 380, 361, 481));
+        listView_7->setFont(font2);
         pushButton_4 = new QPushButton(centralWidget);
         pushButton_4->setObjectName(QString::fromUtf8("pushButton_4"));
         pushButton_4->setGeometry(QRect(1800, 180, 361, 91));
@@ -140,6 +149,7 @@ public:
         listView_8 = new QListView(centralWidget);
         listView_8->setObjectName(QString::fromUtf8("listView_8"));
         listView_8->setGeometry(QRect(600, 90, 600, 1241));
+        listView_8->setFont(font2);
         textBrowser_9 = new QTextBrowser(centralWidget);
         textBrowser_9->setObjectName(QString::fromUtf8("textBrowser_9"));
         textBrowser_9->setGeometry(QRect(600, 0, 601, 91));
@@ -151,12 +161,15 @@ public:
         listView_9 = new QListView(centralWidget);
         listView_9->setObjectName(QString::fromUtf8("listView_9"));
         listView_9->setGeometry(QRect(1200, 90, 600, 1241));
+        listView_9->setFont(font2);
         listView_10 = new QListView(centralWidget);
         listView_10->setObjectName(QString::fromUtf8("listView_10"));
         listView_10->setGeometry(QRect(600, 90, 600, 1241));
+        listView_10->setFont(font2);
         listView_11 = new QListView(centralWidget);
         listView_11->setObjectName(QString::fromUtf8("listView_11"));
         listView_11->setGeometry(QRect(1200, 90, 600, 1241));
+        listView_11->setFont(font2);
         textBrowser_11 = new QTextBrowser(centralWidget);
         textBrowser_11->setObjectName(QString::fromUtf8("textBrowser_11"));
         textBrowser_11->setGeometry(QRect(600, 0, 601, 91));

@@ -1,18 +1,8 @@
 DSEG SEGMENT
-Node	STRUC
-anss	DW 0
-value	DW 0
-Node	ENDS
-
-num	DW 0
-j	DB ' '
-year	DW 0
-cc	DW 3 DUP (0)
-str	DB 10 DUP (' ')
 a	DW 0
-i	DW 0
 b	DW 0
-ppp	Node	<,>
+i	DW 0
+t3	DW 0
 DSEG ENDS
 
 SSEG SEGMENT STACK
@@ -21,103 +11,20 @@ SSEG ENDS
 
 CSEG SEGMENT
 ASSUME CS:CSEG ,DS:DSEG, SS:SSEG
-find	PROC
-.L0:		mov ax,	2
-.L1:		mov cx,	num
-.L2:		mul 	cx
-.L3:		mov num,	ax
-		RET
-find	ENDP
-
 START:
 		mov ax,	DSEG
 		mov ds,	ax
 		mov ax,	SSEG
 		mov ss,	ax
 		mov sp,	LENGTH SKTOP
-.L5:		mov al,	'c'
-.L6:		mov j,	al
-.L7:		mov ax,	365
-.L8:		mov year,	ax
-.L9:		lea bx,	cc
-.L10:		mov ax,	1
-.L11:		mov [bx],	ax
-.L12:		lea bx,	cc
-.L13:		mov ax,	2
-.L14:		mov [bx+4],	ax
-.L15:		mov ax,	2
-.L16:		mov b,	ax
-.L17:		lea bx,	cc
-.L18:		mov ax,	3
-.L19:		mov [bx+8],	ax
-.L20:		lea bx,	str
-.L21:		mov al,	's'
-.L22:		mov [bx],	al
-.L23:		lea bx,	str
-.L24:		mov al,	'y'
-.L25:		mov [bx+4],	al
-.L26:		lea bx,	str
-.L27:		mov al,	'r'
-.L28:		mov [bx+8],	al
-.L29:		lea bx,	str
-.L30:		mov al,	'e'
-.L31:		mov [bx+12],	al
-.L32:		mov ax,	5
-.L33:		mov a,	ax
-.L34:		lea bx,	ppp
-.L35:		mov ax,	5
-.L36:		mov [bx].anss,	ax
-.L37:		mov ax,	10
-.L38:		mov i,	ax
-.L39:		lea bx,	ppp
-.L40:		mov ax,	7
-.L41:		mov [bx].value,	ax
-.L42:		mov ax,	10
-.L43:		cmp ax,	7
-.L44:		jnb 	.L48
-.L45:		lea bx,	ppp
-.L46:		mov ax,	[bx].anss
-.L47:		mov a,	ax
-.L48:		mov ax,	i
-.L49:		cmp ax,	5
-.L50:		jnb 	.L55
-.L51:		lea bx,	ppp
-.L52:		mov ax,	[bx].value
-.L53:		mov a,	ax
-.L54:		jmp 	.L59
-.L55:		mov ax,	a
-.L56:		mov cx,	4
-.L57:		mul 	cx
-.L58:		mov a,	ax
-.L59:		mov ax,	0
-.L60:		mov i,	ax
-.L61:		mov ax,	i
-.L62:		cmp ax,	100
-.L63:		jna 	.L71
-.L64:		mov ax,	i
-.L65:		add ax,	1
-.L66:		mov i,	ax
-.L67:		mov ax,	a
-.L68:		add ax,	2
-.L69:		mov a,	ax
-.L70:		jmp 	.L63
-.L71:		mov ax,	a
-.L72:		cmp ax,	50
-.L73:		jnb 	.L78
-.L74:		mov ax,	a
-.L75:		sub ax,	5
-.L76:		mov a,	ax
-.L77:		jmp 	.L71
-.L78:		mov ax,	a
-.L79:		mov num,	ax
-.L80:		mov ax,	i
-.L81:		mov cx,	a
-.L82:		xor dx,	dx
-.L83:		div 	cx
-.L84:		mov b,	ax
-.L85:		call 	find
-.L86:		mov b,	ax
-.L87:		mov ah,	4ch
-.L88:		int 	21h
+.L1:		mov ax,	60
+.L2:		mov b,	ax
+.L3:		mov ax,	a
+.L4:		add ax,	60
+.L5:		mov t3,	ax
+.L6:		mov cx,	t3
+.L7:		mul 	cx
+.L8:		mov ah,	4ch
+.L9:		int 	21h
 CSEG ENDS
 END START
